@@ -30,68 +30,30 @@
 <section class="panel order-list" aria-labelledby="listTitle"><div class="list-tools"><div class="panel-head"><h3 id="listTitle" tabindex="-1">Danh sách đơn hàng <span class="count" id="resultCount" aria-live="polite"></span></h3><div class="toolbar-actions"><button class="secondary" type="button" id="clearFilters">Xóa bộ lọc</button><nav class="pagination" id="pagerTop" aria-label="Phân trang đầu danh sách"></nav></div></div>
 <div class="controls"><div class="field search"><label for="q">Tìm kiếm</label><input id="q" type="search" placeholder="Tên khách hoặc hàng mua…"></div><div class="field"><label for="fPay">Thanh toán</label><select id="fPay"><option value="all">Tất cả phương thức</option><option>Chưa rõ</option><option>CK</option><option>COD</option><option>Tiền mặt</option><option>Chưa thanh toán</option></select></div><div class="field"><label for="fDel">Giao hàng</label><select id="fDel"><option value="all">Tất cả trạng thái</option><option>Đã giao</option><option>Chưa giao</option><option>Chưa rõ</option></select></div></div>
 </div><div class="table-wrap"><table aria-label="Danh sách đơn hàng"><thead><tr><th scope="col">Khách hàng / Hàng mua</th><th scope="col">Thanh toán</th><th scope="col">Số tiền</th><th scope="col">Giao hàng</th><th scope="col">Ghi chú</th><th scope="col">Thao tác</th></tr></thead><tbody id="rows"></tbody></table></div><div class="list-footer"><p id="listSummary"></p><nav class="pagination" id="pagerBottom" aria-label="Phân trang cuối danh sách"></nav></div></section>
-<div class="list-footer maintenance"><p class="hint">Sao lưu định kỳ để giữ dữ liệu an toàn.</p><button class="secondary" type="button" id="resetButton">Khôi phục 31 đơn gốc</button></div>
 <dialog class="editor" id="editor" aria-labelledby="formTitle" aria-describedby="editNote"><div class="panel-head"><h3 id="formTitle">Thêm đơn mới</h3><div class="toolbar-actions"><span class="tag" id="formMode">Đơn mới</span><button type="button" class="secondary close-dialog" id="closeDialog" aria-label="Đóng biểu mẫu">×</button></div></div><p class="banner dialog-notice" id="dialogNotice" role="status" hidden></p>
 <form id="orderForm"><div class="field"><label for="fName">Tên khách <span class="required">*</span></label><input id="fName" placeholder="Ví dụ: Ngọc Quỳnh" required maxlength="200"></div><div class="field"><label for="fItem">Hàng mua <span class="required">*</span></label><input id="fItem" placeholder="Tên sản phẩm, phân loại…" required maxlength="1000"></div><div class="field"><label for="fPrice">Số tiền · nghìn đồng <span class="required">*</span></label><input id="fPrice" type="number" min="0" max="9000000000" step="0.001" placeholder="340" required aria-describedby="priceHint"><p class="hint" id="priceHint">340 = 340.000 ₫</p></div><div class="field"><label for="fPayIn">Thanh toán</label><select id="fPayIn"><option>Chưa rõ</option><option>CK</option><option>COD</option><option>Tiền mặt</option><option>Chưa thanh toán</option></select></div><div class="field"><label for="fDelIn">Giao hàng</label><select id="fDelIn"><option>Chưa rõ</option><option>Đã giao</option><option>Chưa giao</option></select></div><div class="field wide"><label for="fNote">Ghi chú</label><input id="fNote" placeholder="Quà tặng, thời gian giao…" maxlength="2000"></div><p class="hint wide" id="editNote">Thông tin chưa xác định hãy để “Chưa rõ”.</p><div class="form-actions"><button type="submit" id="saveButton">+ Thêm đơn hàng</button><button type="button" class="secondary" id="cancelEdit">Hủy</button></div></form></dialog>
-</div><p class="footer">Dữ liệu chỉ lưu trên trình duyệt và thiết bị hiện tại. Xuất CSV định kỳ để sao lưu.</p>
+</div><p class="footer">Dữ liệu được lưu trên Supabase dùng chung. Xuất CSV định kỳ để sao lưu.</p>
 </main><div class="toast" id="notification" role="status" aria-live="polite"></div>
 <script>
 const KEY='phan-loai-don-hang-v2';
-const SEED=[
-["Thu Nguyệt","Set Phấn Má Hồng PKT + Cọ SPR 47",1480,"Chưa rõ","Chưa rõ",""],
-["Thảo Nhi","Set kem dưỡng tay Jmella",89,"Chưa rõ","Chưa rõ",""],
-["Diễm Phương","Nước hoa Ck 10ml",100,"Chưa rõ","Chưa rõ",""],
-["Chị Duyên","Mcr clio - kcn Dbla hồng",605,"Chưa rõ","Chưa rõ",""],
-["Thanh Nhàn","Bắt sáng sư tử - bảng mắt moon eyes",280,"Chưa rõ","Chưa rõ","ĐÃ TÍNH"],
-["Xuân Mai Ny","Kem Dưỡng Arecica - Kem chống nắng",670,"Chưa rõ","Chưa rõ",""],
-["Hoa tu líp","Phấn phủ artmiss - Bông mút lẻ Amt",175,"Chưa rõ","Chưa rõ",""],
-["Phương Vũ","Set son dưỡng Sum",380,"Chưa rõ","Chưa rõ",""],
-["Ni","Son Dior 009",340,"Chưa rõ","Chưa rõ","Tặng 1 mask PDRN"],
-["Phương Vũ","Kem ckđ Tfit - Kích mí lưới",254,"Chưa rõ","Chưa rõ","Tặng kèm mask PDRN"],
-["Mai Bình Minh","Son Dior 009 fullbox + túi hãng",550,"Chưa rõ","Chưa rõ",""],
-["Tố Nhii","Son Dior 009 fullbox + túi hãng",590,"Chưa rõ","Chưa rõ",""],
-["Thanh Tiên","Gương kỳ lân hồng",260,"Chưa rõ","Chưa rõ",""],
-["Phan Gia Huyền","Son Dior 009 unbox",340,"Chưa rõ","Chưa rõ","ĐÃ TÍNH"],
-["Mỹ Hiền","Son Dior 029 unbox - Nước hoa CK 10ml",440,"Chưa rõ","Chưa rõ",""],
-["Ngọc Quỳnh","Son Dior 029 unbox",340,"Chưa rõ","Chưa rõ",""],
-["Phan Gia Huyền","Má hồng kem AZTK jc04",135,"Chưa rõ","Chưa rõ",""],
-["Khuê Miên","Son Dior 018 unbox",340,"Chưa rõ","Chưa rõ",""],
-["Lê phan phương dung","Son Dior 037 unbox",340,"Chưa rõ","Chưa rõ",""],
-["Lưu Phương Nhi","Son Dior 009 unbox",340,"Chưa rõ","Chưa rõ",""],
-["Trương Thị Hà My","Son Dior 024 fullbox + túi hãng",590,"CK","Chưa rõ","Tặng mask PR, ship tỉnh đã ck"],
-["Mỹ Vân","Son Dior 029 unbox",340,"CK","Chưa rõ",""],
-["Minh Hoàng","Son Dior 009 unbox",340,"Chưa rõ","Chưa rõ",""],
-["Cxq Cassie","Son Dior 009 fullbox + túi hãng",590,"CK","Chưa rõ","Ship tỉnh đã ck"],
-["Hà Khánh","Son Dior 029 unbox",340,"Chưa rõ","Chưa giao","Hàng về ship"],
-["Linh Cẩm","Son Dior 024 unbox",340,"Chưa rõ","Chưa giao","Hàng về ship"],
-["Thảo Nguyễn","Son Dior 038 fullbox + túi hãng",590,"CK","Chưa giao","Túi về ship"],
-["Thư Lê","Son Dior 009 unbox",340,"Chưa rõ","Chưa giao","Mai hàng về ship"],
-["Hồng Anh Phan","Son Dior 029 unbox",340,"CK","Chưa giao","Hàng về ship tỉnh"],
-["Ngọc Quỳnh","Son Dior 018 unbox",340,"Chưa rõ","Chưa giao","Hàng về ghé lấy"],
-["Kim Thi","Son Dior 009 unbox - Serum Nia Ohoh xanh đen",960,"Chưa rõ","Chưa rõ",""],
-];
-
 const SUPABASE_URL='https://jsdpdfdyxfxvlxdovnkt.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzZHBkZmR5eGZ4dmx4ZG92bmt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxOTkwODksImV4cCI6MjEwODc3NTA4OX0.fhZsGKrJUCVR5Je8tFmO3X7jJa75xi3TIzRWBupnXG8';
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 const toApp = r => ({id:r.id, name:r.customer_name, item:r.item, price:Number(r.amount_k), pay:r.payment_method, del:r.delivery_status, note:r.note||''});
 const toRow = o => ({customer_name:o.name, item:o.item, payment_method:o.pay, amount_k:o.price, delivery_status:o.del, note:o.note||''});
 async function fetchOrders(){ const {data,error}=await sb.from('orders').select('*').order('created_at',{ascending:true}); if(error) throw error; return data.map(toApp); }
-async function seedSupabase(){ const rows=makeSeed().map(o=>toRow(o)); const {error}=await sb.from('orders').insert(rows); if(error) throw error; }
 const $=id=>document.getElementById(id);
 const PAY=['Chưa rõ','CK','COD','Tiền mặt','Chưa thanh toán'], DEL=['Chưa rõ','Đã giao','Chưa giao'];
 let orders=[],editId=null,storageBlocked=false,toastTimer,currentPage=1;
 const PAGE_SIZE=10;
-const makeSeed=()=>SEED.map((r,i)=>({id:i+1,name:r[0],item:r[1],price:r[2],pay:r[3],del:r[4],note:r[5]}));
 function validOrder(o){return o&&((typeof o.id==='number'&&Number.isSafeInteger(o.id))||(typeof o.id==='string'&&o.id.length>0))&&typeof o.name==='string'&&!!o.name.trim()&&typeof o.item==='string'&&!!o.item.trim()&&typeof o.price==='number'&&Number.isFinite(o.price)&&o.price>=0&&o.price<=9000000000&&PAY.includes(o.pay)&&DEL.includes(o.del)&&(o.note===undefined||typeof o.note==='string');}
 function parseOrders(raw){const data=JSON.parse(raw);if(!Array.isArray(data)||!data.every(validOrder)||new Set(data.map(o=>o.id)).size!==data.length)throw new Error('Dữ liệu không hợp lệ');return data;}
 function warning(message){$('storageWarning').textContent=message;$('storageWarning').hidden=!message;}
 function notify(message){clearTimeout(toastTimer);$('notification').textContent=message;if($('editor').open){$('dialogNotice').textContent=message;$('dialogNotice').hidden=false;}toastTimer=setTimeout(()=>{$('notification').textContent='';},4500);}
 async function loadOrders(){
-  if(!sb){ orders=makeSeed(); warning('Không tải được thư viện Supabase, đang dùng dữ liệu mẫu trên máy này.'); return; }
+  if(!sb){ storageBlocked=true; orders=[]; warning('Không tải được thư viện Supabase. Không thể đọc hoặc ghi dữ liệu.'); return; }
   try{
     let list=await fetchOrders();
-    if(!list.length){ await seedSupabase(); list=await fetchOrders(); }
     orders=list; storageBlocked=false; warning('');
   }catch(error){
     storageBlocked=true; warning('Không kết nối được Supabase dùng chung. Hãy kiểm tra mạng rồi tải lại trang. Lỗi: '+(error.message||error));
@@ -121,7 +83,7 @@ function render(){
  $('rows').replaceChildren(fragment);
 }
 function cancelEdit(){if($('editor').open)$('editor').close();document.body.classList.remove('modal-open');editId=null;$('orderForm').reset();for(const id of ['fName','fItem'])$(id).setCustomValidity('');$('formTitle').textContent='Thêm đơn mới';$('formMode').textContent='Đơn mới';$('saveButton').textContent='+ Thêm đơn hàng';$('editNote').textContent='Thông tin chưa xác định hãy để “Chưa rõ”.';$('cancelEdit').textContent='Hủy';$('dialogNotice').hidden=true;}
-async function saveOrder(e){e.preventDefault();const o={name:$('fName').value.trim(),item:$('fItem').value.trim(),price:Number($('fPrice').value),pay:$('fPayIn').value,del:$('fDelIn').value,note:$('fNote').value.trim()};
+async function saveOrder(e){e.preventDefault();if(storageBlocked||!sb){notify('Không có kết nối dữ liệu. Không thể lưu.');return;}const o={name:$('fName').value.trim(),item:$('fItem').value.trim(),price:Number($('fPrice').value),pay:$('fPayIn').value,del:$('fDelIn').value,note:$('fNote').value.trim()};
  for(const id of ['fName','fItem']){const input=$(id);input.setCustomValidity(input.value.trim()?'':'Vui lòng nhập nội dung, không chỉ khoảng trắng.');if(!input.reportValidity())return;}
  const id=editId??crypto.randomUUID();if(!validOrder({id,...o})||$('fPrice').value.trim()===''){notify('Vui lòng kiểm tra thông tin và số tiền hợp lệ.');return;}
  const isEditing=editId!==null;if(isEditing&&!orders.some(x=>x.id===editId)){cancelEdit();notify('Đơn này không còn tồn tại. Vui lòng chọn lại.');return;}
@@ -136,15 +98,14 @@ function editOrder(id){const o=orders.find(x=>x.id===id);if(!o)return;editId=id;
 function openEditor(){$('dialogNotice').hidden=true;if(!$('editor').open)$('editor').showModal();document.body.classList.add('modal-open');$('fName').focus();}
 function addOrder(){cancelEdit();openEditor();}
 
-async function delOrder(id){const order=orders.find(o=>o.id===id);if(!order||!confirm(`Xóa đơn của ${order.name}? Thao tác này không thể hoàn tác.`))return;try{const {error}=await sb.from('orders').delete().eq('id',id);if(error) throw error;}catch(error){notify('Xóa trên Supabase không thành công: '+(error.message||error));return;}orders=orders.filter(o=>o.id!==id);if(editId===id)cancelEdit();render();notify('Đã xóa đơn hàng.');}
-async function resetData(){if(!confirm('Thay thế toàn bộ dữ liệu bằng 31 đơn gốc? Các thay đổi sẽ mất. Hãy xuất CSV trước nếu cần sao lưu.'))return;try{await sb.from('orders').delete().neq('id',0);await seedSupabase();orders=await fetchOrders();}catch(error){notify('Khôi phục trên Supabase không thành công: '+(error.message||error));return;}currentPage=1;cancelEdit();render();notify('Đã khôi phục 31 đơn gốc.');}
+async function delOrder(id){if(storageBlocked||!sb){notify('Không có kết nối dữ liệu. Không thể xóa.');return;}const order=orders.find(o=>o.id===id);if(!order||!confirm(`Xóa đơn của ${order.name}? Thao tác này không thể hoàn tác.`))return;try{const {error}=await sb.from('orders').delete().eq('id',id);if(error) throw error;}catch(error){notify('Xóa trên Supabase không thành công: '+(error.message||error));return;}orders=orders.filter(o=>o.id!==id);if(editId===id)cancelEdit();render();notify('Đã xóa đơn hàng.');}
 function csvCell(value){let text=String(value??'');if(typeof value==='string'&&/^(?:[\t\r\n]|[\s\uFEFF]*[=+\-@])/.test(text))text="'"+text;return '"'+text.replaceAll('"','""')+'"';}
 function exportCSV(){const rows=[['Tên khách','Hàng mua','Phương thức thanh toán','Số tiền (nghìn đồng)','Giao hàng','Ghi chú'],...orders.map(o=>[o.name,o.item,o.pay,o.price,o.del,o.note||''])];const csv=rows.map(r=>r.map(csvCell).join(',')).join('\r\n');const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download='don-hang-'+new Date().toISOString().slice(0,10)+'.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);notify(`Đã xuất ${orders.length} đơn hàng.`);}
 function filterChanged(){currentPage=1;render();}
 $('q').addEventListener('input',filterChanged);for(const id of ['fPay','fDel'])$(id).addEventListener('change',filterChanged);
 $('clearFilters').addEventListener('click',()=>{$('q').value='';$('fPay').value='all';$('fDel').value='all';filterChanged();});
 $('addOrder').addEventListener('click',addOrder);$('closeDialog').addEventListener('click',cancelEdit);$('editor').addEventListener('cancel',event=>{event.preventDefault();cancelEdit();});
-$('orderForm').addEventListener('submit',saveOrder);$('cancelEdit').addEventListener('click',cancelEdit);$('exportButton').addEventListener('click',exportCSV);$('resetButton').addEventListener('click',resetData);for(const id of ['fName','fItem'])$(id).addEventListener('input',()=>$(id).setCustomValidity(''));
+$('orderForm').addEventListener('submit',saveOrder);$('cancelEdit').addEventListener('click',cancelEdit);$('exportButton').addEventListener('click',exportCSV);for(const id of ['fName','fItem'])$(id).addEventListener('input',()=>$(id).setCustomValidity(''));
 // Shared updates: reload when anyone changes the Supabase table.
 if(sb){ sb.channel('orders-changes').on('postgres_changes',{event:'*',schema:'public',table:'orders'},async()=>{ try{ orders=await fetchOrders(); render(); notify('Đã có đơn mới từ người khác, danh sách đã tải lại.'); }catch(e){} }).subscribe(); }
 loadOrders().then(render);
