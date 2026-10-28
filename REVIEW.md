@@ -16,16 +16,16 @@
 
 ## Tối ưu giao diện
 
-Bố cục tổng quan gồm bốn thẻ thống kê, bộ tìm kiếm/lọc và danh sách bên trái, biểu mẫu cố định bên phải trên desktop. Mobile chuyển sang một cột và hiển thị từng đơn dạng thẻ. Màu xanh chủ đạo, khoảng cách và trạng thái dùng thống nhất. Giữ nguyên trạng thái “Chưa rõ”, không suy luận thanh toán từ ghi chú. Tìm kiếm hỗ trợ tiếng Việt không dấu; xuất CSV ghi rõ phạm vi toàn bộ đơn.
+Màn hình chính tập trung vào danh sách 10 đơn/trang, có điều hướng ở đầu và cuối. Thống kê mặc định thu gọn thành một dòng, bấm để mở bốn thẻ chi tiết. Bộ tìm kiếm/lọc cố định khi cuộn danh sách. Biểu mẫu thêm/sửa mở bằng popup có quản lý focus và hỗ trợ Escape; trên điện thoại mở toàn màn hình. Mobile hiển thị từng đơn dạng thẻ. Màu xanh chủ đạo, khoảng cách và trạng thái dùng thống nhất. Giữ nguyên trạng thái “Chưa rõ”, không suy luận thanh toán từ ghi chú. Tìm kiếm hỗ trợ tiếng Việt không dấu; xuất CSV ghi rõ phạm vi toàn bộ đơn.
 
 ## Đề xuất tiếp theo
 
 1. **Ưu tiên cao — Sao lưu và khôi phục:** thêm xuất/nhập JSON có kiểm tra schema, xem trước và lựa chọn gộp/thay thế. CSV hiện tại chưa thể nhập lại trong ứng dụng.
 2. **Khi dùng trên nhiều máy hoặc nhiều nhân viên:** cần backend, đăng nhập, phân quyền và kiểm soát phiên bản bản ghi. localStorage không đồng bộ thiết bị; sự kiện storage chỉ giảm xung đột giữa tab, không bảo đảm giao dịch nguyên tử khi hai tab ghi đồng thời.
 3. **Nghiệp vụ thanh toán:** tách “phương thức” (CK/COD/tiền mặt) và “trạng thái” (chưa thanh toán/đã thanh toán). Dữ liệu cũ đang trộn hai khái niệm; cần xác nhận quy tắc chuyển đổi để tránh suy luận sai.
-4. **Khối lượng đơn tăng:** thêm phân trang, sắp xếp và mã đơn/ngày tạo. Hiện tại kết xuất toàn bộ danh sách phù hợp với 31 đơn mẫu; chưa đo hiệu năng với hàng nghìn đơn.
+4. **Khối lượng đơn tăng:** thêm sắp xếp và mã đơn/ngày tạo. Đã có phân trang 10 đơn nhưng tìm kiếm/lọc và thống kê vẫn duyệt toàn bộ dữ liệu trong bộ nhớ; chưa đo hiệu năng với hàng nghìn đơn.
 5. **An toàn thao tác:** thêm hoàn tác xóa và lịch sử sửa để phục hồi sai sót; hiện tại xóa/khôi phục có hộp thoại xác nhận nhưng không có lịch sử phục hồi.
 
 ## Đã kiểm tra
 
-Kiểm thử thực bằng Chromium headless: dữ liệu mẫu 31 đơn (tổng 13.158.000 ₫), tìm không dấu, thêm/sửa/hủy/xóa, xóa đơn đang sửa rồi thêm mới, chuỗi HTML độc hại không trở thành DOM, khoảng trắng, CSV tiếng Việt và công thức, lỗi quota, dữ liệu JSON hỏng/sai schema, xóa đơn cuối rồi tải lại, cập nhật giữa hai tab, không tràn ngang ở 375/768/1440px. Chưa kiểm thử trực tiếp Safari/iOS hoặc Excel; việc chặn công thức được kiểm tra ở nội dung CSV xuất ra.
+Kiểm thử thực bằng Chromium headless: dữ liệu mẫu 31 đơn (tổng 13.158.000 ₫), tìm không dấu, thêm/sửa/hủy/xóa, xóa đơn đang sửa rồi thêm mới, chuỗi HTML độc hại không trở thành DOM, khoảng trắng, CSV tiếng Việt và công thức, lỗi quota, dữ liệu JSON hỏng/sai schema, xóa đơn cuối rồi tải lại, cập nhật giữa hai tab, phân trang 10 đơn, đổi bộ lọc về trang 1, xóa dòng cuối trang tự lùi trang, focus/Escape của popup, popup mobile toàn màn hình, thanh bộ lọc sticky, không tràn ngang ở 375/768/1440px. Chưa kiểm thử trực tiếp Safari/iOS hoặc Excel; việc chặn công thức được kiểm tra ở nội dung CSV xuất ra.
