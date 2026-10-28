@@ -39,12 +39,12 @@ const KEY='phan-loai-don-hang-v2';
 const SUPABASE_URL='https://jsdpdfdyxfxvlxdovnkt.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzZHBkZmR5eGZ4dmx4ZG92bmt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxOTkwODksImV4cCI6MjEwODc3NTA4OX0.fhZsGKrJUCVR5Je8tFmO3X7jJa75xi3TIzRWBupnXG8';
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-const toApp = r => ({id:r.id, name:r.customer_name, item:r.item, price:Number(r.amount_k), pay:r.payment_method, del:r.delivery_status, note:r.note||''});
+const toApp = r => ({version:r.updated_at,id:r.id, name:r.customer_name, item:r.item, price:Number(r.amount_k), pay:r.payment_method, del:r.delivery_status, note:r.note||''});
 const toRow = o => ({customer_name:o.name, item:o.item, payment_method:o.pay, amount_k:o.price, delivery_status:o.del, note:o.note||''});
 async function fetchOrders(){ const {data,error}=await sb.from('orders').select('*').order('created_at',{ascending:true}); if(error) throw error; return data.map(toApp); }
 const $=id=>document.getElementById(id);
 const PAY=['Chưa rõ','CK','COD','Tiền mặt','Chưa thanh toán'], DEL=['Chưa rõ','Đã giao','Chưa giao'];
-let orders=[],editId=null,storageBlocked=false,toastTimer,currentPage=1;
+let orders=[],editId=null,editVersion=null,storageBlocked=false,toastTimer,currentPage=1;
 const PAGE_SIZE=10;
 function validOrder(o){return o&&((typeof o.id==='number'&&Number.isSafeInteger(o.id))||(typeof o.id==='string'&&o.id.length>0))&&typeof o.name==='string'&&!!o.name.trim()&&typeof o.item==='string'&&!!o.item.trim()&&typeof o.price==='number'&&Number.isFinite(o.price)&&o.price>=0&&o.price<=9000000000&&PAY.includes(o.pay)&&DEL.includes(o.del)&&(o.note===undefined||typeof o.note==='string');}
 function parseOrders(raw){const data=JSON.parse(raw);if(!Array.isArray(data)||!data.every(validOrder)||new Set(data.map(o=>o.id)).size!==data.length)throw new Error('Dữ liệu không hợp lệ');return data;}
@@ -82,19 +82,19 @@ function render(){
  if(!list.length){const row=document.createElement('tr'),td=cell(row,'');td.colSpan=6;td.className='empty';const title=document.createElement('strong');title.textContent=orders.length?'Không tìm thấy đơn phù hợp':'Chưa có đơn hàng';const detail=document.createElement('p');detail.textContent=orders.length?'Thử đổi từ khóa hoặc xóa bộ lọc.':'Nhấn “+ Thêm đơn” để tạo đơn đầu tiên.';td.append(title,detail);row.append(td);fragment.append(row);}
  $('rows').replaceChildren(fragment);
 }
-function cancelEdit(){if($('editor').open)$('editor').close();document.body.classList.remove('modal-open');editId=null;$('orderForm').reset();for(const id of ['fName','fItem'])$(id).setCustomValidity('');$('formTitle').textContent='Thêm đơn mới';$('formMode').textContent='Đơn mới';$('saveButton').textContent='+ Thêm đơn hàng';$('editNote').textContent='Thông tin chưa xác định hãy để “Chưa rõ”.';$('cancelEdit').textContent='Hủy';$('dialogNotice').hidden=true;}
+function cancelEdit(){editVersion=null;if($('editor').open)$('editor').close();document.body.classList.remove('modal-open');editId=null;$('orderForm').reset();for(const id of ['fName','fItem'])$(id).setCustomValidity('');$('formTitle').textContent='Thêm đơn mới';$('formMode').textContent='Đơn mới';$('saveButton').textContent='+ Thêm đơn hàng';$('editNote').textContent='Thông tin chưa xác định hãy để “Chưa rõ”.';$('cancelEdit').textContent='Hủy';$('dialogNotice').hidden=true;}
 async function saveOrder(e){e.preventDefault();if(storageBlocked||!sb){notify('Không có kết nối dữ liệu. Không thể lưu.');return;}const o={name:$('fName').value.trim(),item:$('fItem').value.trim(),price:Number($('fPrice').value),pay:$('fPayIn').value,del:$('fDelIn').value,note:$('fNote').value.trim()};
  for(const id of ['fName','fItem']){const input=$(id);input.setCustomValidity(input.value.trim()?'':'Vui lòng nhập nội dung, không chỉ khoảng trắng.');if(!input.reportValidity())return;}
  const id=editId??crypto.randomUUID();if(!validOrder({id,...o})||$('fPrice').value.trim()===''){notify('Vui lòng kiểm tra thông tin và số tiền hợp lệ.');return;}
  const isEditing=editId!==null;if(isEditing&&!orders.some(x=>x.id===editId)){cancelEdit();notify('Đơn này không còn tồn tại. Vui lòng chọn lại.');return;}
  let savedId=id;
   try{
-    if(isEditing){ const {error}=await sb.from('orders').update(toRow(o)).eq('id',editId); if(error) throw error; orders=orders.map(x=>x.id===editId?{...x,...o}:x); }
+    if(isEditing){ const {data,error}=await sb.from('orders').update(toRow(o)).eq('id',editId).eq('updated_at',editVersion).select().maybeSingle(); if(error) throw error; if(!data){notify('Đơn đã thay đổi hoặc bị xóa. Hãy tải lại trước khi lưu.');return;} orders=orders.map(x=>x.id===editId?toApp(data):x); }
     else { const {data,error}=await sb.from('orders').insert(toRow(o)).select().single(); if(error) throw error; savedId=data.id; orders=[{id:savedId,...o},...orders]; }
   }catch(error){ notify('Lưu lên Supabase không thành công: '+(error.message||error)); return; }
   if(!isEditing)currentPage=1;cancelEdit();render();if(isEditing)$('listTitle').focus({preventScroll:true});notify(isEditing?'Đã cập nhật đơn hàng.':filteredOrders().some(x=>x.id===savedId)?'Đã thêm đơn hàng.':'Đã thêm đơn hàng. Đơn đang bị ẩn bởi bộ lọc.');
 }
-function editOrder(id){const o=orders.find(x=>x.id===id);if(!o)return;editId=id;for(const [field,key] of [['fName','name'],['fItem','item'],['fPrice','price'],['fPayIn','pay'],['fDelIn','del'],['fNote','note']]){$(field).value=o[key]??'';if($(field).setCustomValidity)$(field).setCustomValidity('');}$('formTitle').textContent='Chỉnh sửa đơn hàng';$('formMode').textContent='Đang sửa';$('saveButton').textContent='Lưu thay đổi';$('cancelEdit').textContent='Hủy sửa';$('editNote').textContent='Đang sửa đơn của '+o.name;openEditor();}
+function editOrder(id){const o=orders.find(x=>x.id===id);if(!o)return;editId=id;editVersion=o.version;for(const [field,key] of [['fName','name'],['fItem','item'],['fPrice','price'],['fPayIn','pay'],['fDelIn','del'],['fNote','note']]){$(field).value=o[key]??'';if($(field).setCustomValidity)$(field).setCustomValidity('');}$('formTitle').textContent='Chỉnh sửa đơn hàng';$('formMode').textContent='Đang sửa';$('saveButton').textContent='Lưu thay đổi';$('cancelEdit').textContent='Hủy sửa';$('editNote').textContent='Đang sửa đơn của '+o.name;openEditor();}
 function openEditor(){$('dialogNotice').hidden=true;if(!$('editor').open)$('editor').showModal();document.body.classList.add('modal-open');$('fName').focus();}
 function addOrder(){cancelEdit();openEditor();}
 
