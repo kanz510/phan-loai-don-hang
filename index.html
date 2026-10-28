@@ -18,12 +18,12 @@
 .workspace{display:block}.order-list{overflow:visible}.list-tools{position:sticky;top:0;z-index:2;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 3px 8px #233b3608}.list-tools .panel-head{flex-wrap:wrap}.list-tools .controls{border-bottom:1px solid var(--line)}.toolbar-actions,.pagination{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.pagination{font-size:12px;color:var(--muted)}.pagination button{min-height:36px;padding:7px 10px}.list-footer{flex-wrap:wrap}.overview{margin-bottom:12px}.overview-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.compact-stats{margin-bottom:18px;border:1px solid var(--line);border-radius:12px;background:#fff}.compact-stats summary{cursor:pointer;padding:14px 16px;font-size:13px;line-height:1.7}.compact-stats summary strong{color:var(--green)}.compact-stats summary .detail-link{color:var(--muted);font-size:12px;margin-left:8px}.compact-stats .cards{padding:0 14px 14px;margin:0}.table-wrap{border-radius:0 0 12px 12px}.customer{overflow-wrap:anywhere}.count{white-space:nowrap}
 .editor{position:fixed;inset:0;width:min(580px,calc(100% - 32px));max-height:calc(100dvh - 40px);margin:auto;padding:0;border:1px solid var(--line);border-radius:16px;color:inherit;overflow:auto;box-shadow:0 24px 80px #123b3433}.editor::backdrop{background:#183b3259;backdrop-filter:blur(3px)}.editor .panel-head{position:sticky;top:0;z-index:1}.editor form{grid-template-columns:1fr 1fr;gap:16px}.editor .wide,.editor .form-actions,.editor form>.field:first-child,.editor form>.field:nth-child(2){grid-column:1/-1}.editor .form-actions{position:sticky;bottom:-20px;background:#fff;padding:12px 0;margin-bottom:-8px}.editor .dialog-notice{margin:16px 20px 0}.close-dialog{font-size:20px;line-height:1;padding:8px 12px}.modal-open{overflow:hidden}.toast{z-index:6}#listTitle{scroll-margin-top:180px}
 @media(max-width:540px){.overview{align-items:center}.overview-actions{flex-direction:column}.overview-actions button{min-height:38px}.overview p{display:none}.compact-stats summary{padding:10px 12px}.compact-stats summary .detail-link{display:block;margin-left:18px}.list-tools .panel-head{padding:12px}.toolbar-actions{width:100%;justify-content:space-between}.list-tools .controls{padding:10px 12px;gap:8px}.list-tools .controls label{font-size:11px}.list-tools .controls input,.list-tools .controls select{min-height:38px;padding:8px}.list-tools .field{gap:4px}.editor{width:100%;height:100dvh;max-height:100dvh;max-width:none;inset:0;border:0;border-radius:0}.editor form{padding-bottom:calc(20px + env(safe-area-inset-bottom))}.editor .form-actions{bottom:calc(-20px - env(safe-area-inset-bottom));padding-bottom:calc(12px + env(safe-area-inset-bottom))}.list-footer{padding:12px}.list-footer .pagination{width:100%;justify-content:space-between}}
-</style>
+ .auth-panel{max-width:440px;margin:24px auto;padding:24px;background:white;border:1px solid var(--line);border-radius:16px}.auth-panel form{display:grid;gap:12px}.auth-bar{display:flex;gap:12px;align-items:center;justify-content:flex-end;padding:12px 24px} </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <header><div class="header-inner"><div class="brand"><div class="logo" aria-hidden="true">▤</div><div><h1>Phân loại đơn hàng</h1><p>Gọn đơn hàng. Rõ thanh toán. Dễ theo dõi.</p></div></div><span class="local-badge">● Dữ liệu dùng chung qua Supabase</span></div></header>
-<main>
+<section class="auth-panel" id="authPanel"><h2>Đăng nhập</h2><p>Chỉ tài khoản thành viên mới được truy cập đơn hàng.</p><form id="authForm"><label for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username" required><label for="loginPassword">Mật khẩu</label><input id="loginPassword" type="password" autocomplete="current-password" required><button type="submit">Đăng nhập</button></form><p id="authError" role="alert"></p></section><div class="auth-bar" id="authBar" hidden><span id="authName"></span><button id="logoutButton" type="button">Đăng xuất</button></div><main id="appMain" hidden>
 <div id="storageWarning" class="banner" role="alert" hidden></div>
 <section aria-labelledby="overviewTitle"><div class="overview"><div><div class="eyebrow">Không gian quản lý</div><h2 id="overviewTitle">Đơn hàng</h2><p>Theo dõi đơn và cập nhật trạng thái mỗi ngày.</p></div><div class="overview-actions"><button type="button" class="secondary" id="exportButton">↓ Xuất tất cả CSV</button><button type="button" id="addOrder">+ Thêm đơn</button></div></div><details class="compact-stats"><summary><span id="statsSummary"></span><span class="detail-link">Xem thống kê chi tiết</span></summary><div class="cards" id="stats"></div></details></section>
 <div class="workspace">
@@ -45,7 +45,7 @@ async function fetchOrders(){ const {data,error}=await sb.from('orders').select(
 const $=id=>document.getElementById(id);
 const PAY=['Chưa rõ','CK','COD','Tiền mặt','Chưa thanh toán'], DEL=['Chưa rõ','Đã giao','Chưa giao'];
 let orders=[],editId=null,editVersion=null,storageBlocked=false,toastTimer,currentPage=1;
-const PAGE_SIZE=10;
+const PAGE_SIZE=10;let activeUser=null;
 function validOrder(o){return o&&((typeof o.id==='number'&&Number.isSafeInteger(o.id))||(typeof o.id==='string'&&o.id.length>0))&&typeof o.name==='string'&&!!o.name.trim()&&typeof o.item==='string'&&!!o.item.trim()&&typeof o.price==='number'&&Number.isFinite(o.price)&&o.price>=0&&o.price<=9000000000&&PAY.includes(o.pay)&&DEL.includes(o.del)&&(o.note===undefined||typeof o.note==='string');}
 function parseOrders(raw){const data=JSON.parse(raw);if(!Array.isArray(data)||!data.every(validOrder)||new Set(data.map(o=>o.id)).size!==data.length)throw new Error('Dữ liệu không hợp lệ');return data;}
 function warning(message){$('storageWarning').textContent=message;$('storageWarning').hidden=!message;}
@@ -83,7 +83,7 @@ function render(){
  $('rows').replaceChildren(fragment);
 }
 function cancelEdit(){editVersion=null;if($('editor').open)$('editor').close();document.body.classList.remove('modal-open');editId=null;$('orderForm').reset();for(const id of ['fName','fItem'])$(id).setCustomValidity('');$('formTitle').textContent='Thêm đơn mới';$('formMode').textContent='Đơn mới';$('saveButton').textContent='+ Thêm đơn hàng';$('editNote').textContent='Thông tin chưa xác định hãy để “Chưa rõ”.';$('cancelEdit').textContent='Hủy';$('dialogNotice').hidden=true;}
-async function saveOrder(e){e.preventDefault();if(storageBlocked||!sb){notify('Không có kết nối dữ liệu. Không thể lưu.');return;}const o={name:$('fName').value.trim(),item:$('fItem').value.trim(),price:Number($('fPrice').value),pay:$('fPayIn').value,del:$('fDelIn').value,note:$('fNote').value.trim()};
+async function saveOrder(e){e.preventDefault();if(storageBlocked||!sb||!activeUser){notify('Không có quyền hoặc kết nối dữ liệu.');return;}const o={name:$('fName').value.trim(),item:$('fItem').value.trim(),price:Number($('fPrice').value),pay:$('fPayIn').value,del:$('fDelIn').value,note:$('fNote').value.trim()};
  for(const id of ['fName','fItem']){const input=$(id);input.setCustomValidity(input.value.trim()?'':'Vui lòng nhập nội dung, không chỉ khoảng trắng.');if(!input.reportValidity())return;}
  const id=editId??crypto.randomUUID();if(!validOrder({id,...o})||$('fPrice').value.trim()===''){notify('Vui lòng kiểm tra thông tin và số tiền hợp lệ.');return;}
  const isEditing=editId!==null;if(isEditing&&!orders.some(x=>x.id===editId)){cancelEdit();notify('Đơn này không còn tồn tại. Vui lòng chọn lại.');return;}
@@ -98,7 +98,7 @@ function editOrder(id){const o=orders.find(x=>x.id===id);if(!o)return;editId=id;
 function openEditor(){$('dialogNotice').hidden=true;if(!$('editor').open)$('editor').showModal();document.body.classList.add('modal-open');$('fName').focus();}
 function addOrder(){cancelEdit();openEditor();}
 
-async function delOrder(id){if(storageBlocked||!sb){notify('Không có kết nối dữ liệu. Không thể xóa.');return;}const order=orders.find(o=>o.id===id);if(!order||!confirm(`Xóa đơn của ${order.name}? Thao tác này không thể hoàn tác.`))return;try{const {error}=await sb.from('orders').delete().eq('id',id);if(error) throw error;}catch(error){notify('Xóa trên Supabase không thành công: '+(error.message||error));return;}orders=orders.filter(o=>o.id!==id);if(editId===id)cancelEdit();render();notify('Đã xóa đơn hàng.');}
+async function delOrder(id){if(storageBlocked||!sb||!activeUser){notify('Không có quyền hoặc kết nối dữ liệu.');return;}const order=orders.find(o=>o.id===id);if(!order||!confirm(`Xóa đơn của ${order.name}? Thao tác này không thể hoàn tác.`))return;try{const {error}=await sb.from('orders').delete().eq('id',id);if(error) throw error;}catch(error){notify('Xóa trên Supabase không thành công: '+(error.message||error));return;}orders=orders.filter(o=>o.id!==id);if(editId===id)cancelEdit();render();notify('Đã xóa đơn hàng.');}
 function csvCell(value){let text=String(value??'');if(typeof value==='string'&&/^(?:[\t\r\n]|[\s\uFEFF]*[=+\-@])/.test(text))text="'"+text;return '"'+text.replaceAll('"','""')+'"';}
 function exportCSV(){const rows=[['Tên khách','Hàng mua','Phương thức thanh toán','Số tiền (nghìn đồng)','Giao hàng','Ghi chú'],...orders.map(o=>[o.name,o.item,o.pay,o.price,o.del,o.note||''])];const csv=rows.map(r=>r.map(csvCell).join(',')).join('\r\n');const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download='don-hang-'+new Date().toISOString().slice(0,10)+'.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);notify(`Đã xuất ${orders.length} đơn hàng.`);}
 function filterChanged(){currentPage=1;render();}
@@ -106,9 +106,28 @@ $('q').addEventListener('input',filterChanged);for(const id of ['fPay','fDel'])$
 $('clearFilters').addEventListener('click',()=>{$('q').value='';$('fPay').value='all';$('fDel').value='all';filterChanged();});
 $('addOrder').addEventListener('click',addOrder);$('closeDialog').addEventListener('click',cancelEdit);$('editor').addEventListener('cancel',event=>{event.preventDefault();cancelEdit();});
 $('orderForm').addEventListener('submit',saveOrder);$('cancelEdit').addEventListener('click',cancelEdit);$('exportButton').addEventListener('click',exportCSV);for(const id of ['fName','fItem'])$(id).addEventListener('input',()=>$(id).setCustomValidity(''));
-// Shared updates: reload when anyone changes the Supabase table.
-if(sb){ sb.channel('orders-changes').on('postgres_changes',{event:'*',schema:'public',table:'orders'},async()=>{ try{ orders=await fetchOrders(); render(); notify('Đã có đơn mới từ người khác, danh sách đã tải lại.'); }catch(e){} }).subscribe(); }
-loadOrders().then(render);
+let realtimeChannel=null;
+async function enterApp(user){
+ const {data,error}=await sb.from('order_members').select('user_id').eq('user_id',user.id).maybeSingle();
+ if(error||!data)throw new Error('Tài khoản chưa được cấp quyền thành viên.');
+ activeUser=user;$('authPanel').hidden=true;$('appMain').hidden=false;$('authBar').hidden=false;$('authName').textContent=user.email||'Thành viên';
+ await loadOrders();render();
+ realtimeChannel=sb.channel('orders-changes').on('postgres_changes',{event:'*',schema:'public',table:'orders'},async()=>{try{await loadOrders();render();}catch(e){}}).subscribe();
+}
+function leaveApp(message=''){
+ activeUser=null;storageBlocked=true;orders=[];cancelEdit();render();
+ $('appMain').hidden=true;$('authBar').hidden=true;$('authPanel').hidden=false;$('authError').textContent=message;
+ if(realtimeChannel){sb.removeChannel(realtimeChannel);realtimeChannel=null;}
+}
+$('authForm').addEventListener('submit',async e=>{
+ e.preventDefault();if(!sb){leaveApp('Không tải được Supabase.');return;}
+ const button=e.submitter;button.disabled=true;
+ try{const {data,error}=await sb.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});if(error)throw error;await enterApp(data.user);$('loginPassword').value='';}
+ catch(err){leaveApp(err.message||'Đăng nhập thất bại.');}
+ finally{button.disabled=false;}
+});
+$('logoutButton').addEventListener('click',async()=>{if(sb)await sb.auth.signOut();leaveApp();});
+(async()=>{if(!sb){leaveApp('Không tải được Supabase.');return;}const {data,error}=await sb.auth.getUser();if(error||!data.user){leaveApp();return;}try{await enterApp(data.user);}catch(err){leaveApp(err.message);}})();
 </script>
 </body>
 </html>
