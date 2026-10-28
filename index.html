@@ -8,7 +8,7 @@
 body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f6f3ee;color:#222}
 header{background:#fff;padding:16px 20px;border-bottom:1px solid #e5ddd2;position:sticky;top:0}
 h1{margin:0 0 4px;font-size:22px} p{margin:4px 0;color:#666}
-main{max-width:1000px;margin:0 auto;padding:16px}
+main{max-width:1100px;margin:0 auto;padding:16px}
 .cards{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}
 .card{background:#fff;border:1px solid #e5ddd2;border-radius:12px;padding:12px 16px;flex:1;min-width:150px}
 .card b{font-size:20px;display:block}
@@ -20,6 +20,7 @@ table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;ove
 th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}
 th{background:#faf7f2}
 .tag{display:inline-block;padding:2px 8px;border-radius:999px;background:#eee;font-size:13px}
+.tag.done{background:#d8f3dc}.tag.not{background:#ffe8cc}
 form{background:#fff;border:1px solid #e5ddd2;border-radius:12px;padding:14px;display:grid;gap:8px;margin:12px 0}
 form .row{display:flex;gap:8px;flex-wrap:wrap} form .row>*{flex:1;min-width:160px}
 .note{color:#666;font-size:14px}
@@ -28,20 +29,19 @@ form .row{display:flex;gap:8px;flex-wrap:wrap} form .row>*{flex:1;min-width:160p
 <body>
 <header>
 <h1>Phân loại đơn hàng</h1>
-<p>Thêm, sửa, xóa đơn và lưu lại trên trình duyệt này (localStorage). Lọc theo trạng thái, tìm theo tên hoặc món hàng.</p>
+<p>Các trường chính: tên khách, hàng mua, phương thức thanh toán, số tiền, đã giao / chưa giao. Lưu lại trên trình duyệt này (localStorage).</p>
 </header>
 <main>
 <div class="cards" id="stats"></div>
 <div class="controls">
 <input id="q" placeholder="Tìm tên khách hoặc món hàng…" oninput="render()">
-<select id="filter" onchange="render()">
-<option value="all">Tất cả trạng thái</option>
-<option value="Chưa rõ">Chưa rõ</option>
-<option value="ĐÃ TÍNH">ĐÃ TÍNH</option>
-<option value="Đã ck">Đã ck</option>
-<option value="Hàng về ship">Hàng về ship</option>
-<option value="Hàng về ghé lấy">Hàng về ghé lấy</option>
-<option value="Ship tỉnh đã ck">Ship tỉnh đã ck</option>
+<select id="fPay" onchange="render()">
+<option value="all">Tất cả phương thức thanh toán</option>
+<option>Chưa rõ</option><option>CK</option><option>COD</option><option>Tiền mặt</option><option>Chưa thanh toán</option>
+</select>
+<select id="fDel" onchange="render()">
+<option value="all">Tất cả trạng thái giao hàng</option>
+<option>Đã giao</option><option>Chưa giao</option><option>Chưa rõ</option>
 </select>
 <button class="secondary" onclick="exportCSV()">Xuất CSV</button>
 <button class="secondary" onclick="resetData()">Khôi phục 31 đơn gốc</button>
@@ -50,92 +50,92 @@ form .row{display:flex;gap:8px;flex-wrap:wrap} form .row>*{flex:1;min-width:160p
 <h3 style="margin:0" id="formTitle">Thêm đơn mới</h3>
 <div class="row">
 <input id="fName" placeholder="Tên khách *" required>
-<input id="fItem" placeholder="Món hàng *" required>
-<input id="fPrice" type="number" min="0" placeholder="Giá (nghìn đồng) *" required>
+<input id="fItem" placeholder="Hàng mua *" required>
+<input id="fPrice" type="number" min="0" placeholder="Số tiền (nghìn đồng) *" required>
 </div>
 <div class="row">
-<select id="fStatus">
-<option>Chưa rõ</option><option>ĐÃ TÍNH</option><option>Đã ck</option>
-<option>Hàng về ship</option><option>Hàng về ghé lấy</option><option>Ship tỉnh đã ck</option>
-</select>
+<select id="fPayIn"><option>Chưa rõ</option><option>CK</option><option>COD</option><option>Tiền mặt</option><option>Chưa thanh toán</option></select>
+<select id="fDelIn"><option>Chưa rõ</option><option>Đã giao</option><option>Chưa giao</option></select>
 <input id="fNote" placeholder="Ghi chú (tặng mask, túi về ship…)">
 </div>
 <button type="submit">Lưu đơn</button>
 <p class="note" id="editNote"></p>
 </form>
 <table>
-<thead><tr><th>Khách</th><th>Món hàng</th><th>Giá</th><th>Trạng thái</th><th>Ghi chú</th><th></th></tr></thead>
+<thead><tr><th>Tên khách</th><th>Hàng mua</th><th>Phương thức thanh toán</th><th>Số tiền</th><th>Giao hàng</th><th>Ghi chú</th><th></th></tr></thead>
 <tbody id="rows"></tbody>
 </table>
-<p class="note">Tổng tiền hiển thị theo bộ lọc đang chọn. Giá nhập theo nghìn đồng, ví dụ 340 = 340.000đ.</p>
+<p class="note">Số tiền nhập theo nghìn đồng, ví dụ 340 = 340.000đ. Đơn gốc nào chưa ghi rõ thanh toán hay giao hàng thì để “Chưa rõ”, không tự đoán.</p>
 </main>
 <script>
-const KEY='phan-loai-don-hang-v1';
+const KEY='phan-loai-don-hang-v2';
 const SEED=[
-["Thu Nguyệt","Set Phấn Má Hồng PKT + Cọ SPR 47",1480,"Chưa rõ",""],
-["Thảo Nhi","Set kem dưỡng tay Jmella",89,"Chưa rõ",""],
-["Diễm Phương","Nước hoa Ck 10ml",100,"Chưa rõ",""],
-["Chị Duyên","Mcr clio - kcn Dbla hồng",605,"Chưa rõ",""],
-["Thanh Nhàn","Bắt sáng sư tử - bảng mắt moon eyes",280,"ĐÃ TÍNH",""],
-["Xuân Mai Ny","Kem Dưỡng Arecica - Kem chống nắng",670,"Chưa rõ",""],
-["Hoa tu líp","Phấn phủ artmiss - Bông mút lẻ Amt",175,"Chưa rõ",""],
-["Phương Vũ","Set son dưỡng Sum",380,"Chưa rõ",""],
-["Ni","Son Dior 009",340,"Chưa rõ","Tặng 1 mask PDRN"],
-["Phương Vũ","Kem ckđ Tfit - Kích mí lưới",254,"Chưa rõ","Tặng kèm mask PDRN"],
-["Mai Bình Minh","Son Dior 009 fullbox + túi hãng",550,"Chưa rõ",""],
-["Tố Nhii","Son Dior 009 fullbox + túi hãng",590,"Chưa rõ",""],
-["Thanh Tiên","Gương kỳ lân hồng",260,"Chưa rõ",""],
-["Phan Gia Huyền","Son Dior 009 unbox",340,"ĐÃ TÍNH",""],
-["Mỹ Hiền","Son Dior 029 unbox - Nước hoa CK 10ml",440,"Chưa rõ",""],
-["Ngọc Quỳnh","Son Dior 029 unbox",340,"Chưa rõ",""],
-["Phan Gia Huyền","Má hồng kem AZTK jc04",135,"Chưa rõ",""],
-["Khuê Miên","Son Dior 018 unbox",340,"Chưa rõ",""],
-["Lê phan phương dung","Son Dior 037 unbox",340,"Chưa rõ",""],
-["Lưu Phương Nhi","Son Dior 009 unbox",340,"Chưa rõ",""],
-["Trương Thị Hà My","Son Dior 024 fullbox + túi hãng",590,"Ship tỉnh đã ck","Tặng mask PR"],
-["Mỹ Vân","Son Dior 029 unbox",340,"Đã ck",""],
-["Minh Hoàng","Son Dior 009 unbox",340,"Chưa rõ",""],
-["Cxq Cassie","Son Dior 009 fullbox + túi hãng",590,"Ship tỉnh đã ck",""],
-["Hà Khánh","Son Dior 029 unbox",340,"Hàng về ship",""],
-["Linh Cẩm","Son Dior 024 unbox",340,"Hàng về ship",""],
-["Thảo Nguyễn","Son Dior 038 fullbox + túi hãng",590,"Đã ck","Túi về ship"],
-["Thư Lê","Son Dior 009 unbox",340,"Hàng về ship","Mai hàng về ship"],
-["Hồng Anh Phan","Son Dior 029 unbox",340,"Đã ck","Hàng về ship tỉnh"],
-["Ngọc Quỳnh","Son Dior 018 unbox",340,"Hàng về ghé lấy",""],
-["Kim Thi","Son Dior 009 unbox - Serum Nia Ohoh xanh đen",960,"Chưa rõ",""],
+["Thu Nguyệt","Set Phấn Má Hồng PKT + Cọ SPR 47",1480,"Chưa rõ","Chưa rõ",""],
+["Thảo Nhi","Set kem dưỡng tay Jmella",89,"Chưa rõ","Chưa rõ",""],
+["Diễm Phương","Nước hoa Ck 10ml",100,"Chưa rõ","Chưa rõ",""],
+["Chị Duyên","Mcr clio - kcn Dbla hồng",605,"Chưa rõ","Chưa rõ",""],
+["Thanh Nhàn","Bắt sáng sư tử - bảng mắt moon eyes",280,"Chưa rõ","Chưa rõ","ĐÃ TÍNH"],
+["Xuân Mai Ny","Kem Dưỡng Arecica - Kem chống nắng",670,"Chưa rõ","Chưa rõ",""],
+["Hoa tu líp","Phấn phủ artmiss - Bông mút lẻ Amt",175,"Chưa rõ","Chưa rõ",""],
+["Phương Vũ","Set son dưỡng Sum",380,"Chưa rõ","Chưa rõ",""],
+["Ni","Son Dior 009",340,"Chưa rõ","Chưa rõ","Tặng 1 mask PDRN"],
+["Phương Vũ","Kem ckđ Tfit - Kích mí lưới",254,"Chưa rõ","Chưa rõ","Tặng kèm mask PDRN"],
+["Mai Bình Minh","Son Dior 009 fullbox + túi hãng",550,"Chưa rõ","Chưa rõ",""],
+["Tố Nhii","Son Dior 009 fullbox + túi hãng",590,"Chưa rõ","Chưa rõ",""],
+["Thanh Tiên","Gương kỳ lân hồng",260,"Chưa rõ","Chưa rõ",""],
+["Phan Gia Huyền","Son Dior 009 unbox",340,"Chưa rõ","Chưa rõ","ĐÃ TÍNH"],
+["Mỹ Hiền","Son Dior 029 unbox - Nước hoa CK 10ml",440,"Chưa rõ","Chưa rõ",""],
+["Ngọc Quỳnh","Son Dior 029 unbox",340,"Chưa rõ","Chưa rõ",""],
+["Phan Gia Huyền","Má hồng kem AZTK jc04",135,"Chưa rõ","Chưa rõ",""],
+["Khuê Miên","Son Dior 018 unbox",340,"Chưa rõ","Chưa rõ",""],
+["Lê phan phương dung","Son Dior 037 unbox",340,"Chưa rõ","Chưa rõ",""],
+["Lưu Phương Nhi","Son Dior 009 unbox",340,"Chưa rõ","Chưa rõ",""],
+["Trương Thị Hà My","Son Dior 024 fullbox + túi hãng",590,"CK","Chưa rõ","Tặng mask PR, ship tỉnh đã ck"],
+["Mỹ Vân","Son Dior 029 unbox",340,"CK","Chưa rõ",""],
+["Minh Hoàng","Son Dior 009 unbox",340,"Chưa rõ","Chưa rõ",""],
+["Cxq Cassie","Son Dior 009 fullbox + túi hãng",590,"CK","Chưa rõ","Ship tỉnh đã ck"],
+["Hà Khánh","Son Dior 029 unbox",340,"Chưa rõ","Chưa giao","Hàng về ship"],
+["Linh Cẩm","Son Dior 024 unbox",340,"Chưa rõ","Chưa giao","Hàng về ship"],
+["Thảo Nguyễn","Son Dior 038 fullbox + túi hãng",590,"CK","Chưa giao","Túi về ship"],
+["Thư Lê","Son Dior 009 unbox",340,"Chưa rõ","Chưa giao","Mai hàng về ship"],
+["Hồng Anh Phan","Son Dior 029 unbox",340,"CK","Chưa giao","Hàng về ship tỉnh"],
+["Ngọc Quỳnh","Son Dior 018 unbox",340,"Chưa rõ","Chưa giao","Hàng về ghé lấy"],
+["Kim Thi","Son Dior 009 unbox - Serum Nia Ohoh xanh đen",960,"Chưa rõ","Chưa rõ",""],
 ];
 let orders, editId=null;
 try{orders=JSON.parse(localStorage.getItem(KEY))||null}catch(e){orders=null}
-if(!orders||!orders.length){orders=SEED.map((r,i)=>({id:i+1,name:r[0],item:r[1],price:r[2],status:r[3],note:r[4]}));persist()}
+if(!orders||!orders.length){orders=SEED.map((r,i)=>({id:i+1,name:r[0],item:r[1],price:r[2],pay:r[3],del:r[4],note:r[5]}));persist()}
 function persist(){localStorage.setItem(KEY,JSON.stringify(orders))}
 function fmt(n){return n.toLocaleString('vi-VN')+'k'}
 function render(){
  const q=(document.getElementById('q').value||'').toLowerCase();
- const f=document.getElementById('filter').value;
- const list=orders.filter(o=>(f==='all'||o.status===f)&&((o.name+' '+o.item).toLowerCase().includes(q)));
+ const fp=document.getElementById('fPay').value, fd=document.getElementById('fDel').value;
+ const list=orders.filter(o=>(fp==='all'||o.pay===fp)&&(fd==='all'||o.del===fd)&&((o.name+' '+o.item).toLowerCase().includes(q)));
  const total=list.reduce((s,o)=>s+Number(o.price||0),0);
+ const delivered=orders.filter(o=>o.del==='Đã giao').length, undelivered=orders.filter(o=>o.del==='Chưa giao').length;
  document.getElementById('stats').innerHTML=
  `<div class="card"><span>Đơn đang hiển thị</span><b>${list.length}</b></div>
   <div class="card"><span>Tổng tiền đang hiển thị</span><b>${fmt(total)}</b></div>
+  <div class="card"><span>Đã giao / Chưa giao (tất cả)</span><b>${delivered} / ${undelivered}</b></div>
   <div class="card"><span>Tất cả đơn</span><b>${orders.length} đơn · ${fmt(orders.reduce((s,o)=>s+Number(o.price||0),0))}</b></div>`;
  document.getElementById('rows').innerHTML=list.map(o=>`<tr>
-  <td>${o.name}</td><td>${o.item}</td><td>${fmt(o.price)}</td>
-  <td><span class="tag">${o.status}</span></td><td>${o.note||''}</td>
-  <td><button onclick="editOrder(${o.id})">Sửa</button> <button class="secondary" onclick="delOrder(${o.id})">Xóa</button></td></tr>`).join('')||'<tr><td colspan="6">Không có đơn nào khớp.</td></tr>';
+  <td>${o.name}</td><td>${o.item}</td><td>${o.pay}</td><td>${fmt(o.price)}</td>
+  <td><span class="tag ${o.del==='Đã giao'?'done':o.del==='Chưa giao'?'not':''}">${o.del}</span></td><td>${o.note||''}</td>
+  <td><button onclick="editOrder(${o.id})">Sửa</button> <button class="secondary" onclick="delOrder(${o.id})">Xóa</button></td></tr>`).join('')||'<tr><td colspan="7">Không có đơn nào khớp.</td></tr>';
 }
 function saveOrder(e){e.preventDefault();
- const o={name:document.getElementById('fName').value.trim(),item:document.getElementById('fItem').value.trim(),price:Number(document.getElementById('fPrice').value),status:document.getElementById('fStatus').value,note:document.getElementById('fNote').value.trim()};
+ const o={name:document.getElementById('fName').value.trim(),item:document.getElementById('fItem').value.trim(),price:Number(document.getElementById('fPrice').value),pay:document.getElementById('fPayIn').value,del:document.getElementById('fDelIn').value,note:document.getElementById('fNote').value.trim()};
  if(editId){Object.assign(orders.find(x=>x.id===editId),o);editId=null;document.getElementById('formTitle').textContent='Thêm đơn mới';document.getElementById('editNote').textContent='';}
  else{orders.unshift({id:Date.now(),...o});}
  e.target.reset();persist();render();
 }
 function editOrder(id){const o=orders.find(x=>x.id===id);editId=id;
- document.getElementById('fName').value=o.name;document.getElementById('fItem').value=o.item;document.getElementById('fPrice').value=o.price;document.getElementById('fStatus').value=o.status;document.getElementById('fNote').value=o.note||'';
+ document.getElementById('fName').value=o.name;document.getElementById('fItem').value=o.item;document.getElementById('fPrice').value=o.price;document.getElementById('fPayIn').value=o.pay;document.getElementById('fDelIn').value=o.del;document.getElementById('fNote').value=o.note||'';
  document.getElementById('formTitle').textContent='Đang sửa đơn của '+o.name;document.getElementById('editNote').textContent='Nhấn Lưu đơn để cập nhật.';
  window.scrollTo({top:0,behavior:'smooth'});}
 function delOrder(id){if(confirm('Xóa đơn này?')){orders=orders.filter(x=>x.id!==id);persist();render();}}
 function resetData(){if(confirm('Khôi phục lại 31 đơn gốc? Các thay đổi sẽ mất.')){localStorage.removeItem(KEY);location.reload();}}
-function exportCSV(){const rows=[['Khach','Mon hang','Gia (k)','Trang thai','Ghi chu'],...orders.map(o=>[o.name,o.item,o.price,o.status,o.note||''])];
+function exportCSV(){const rows=[['Ten khach','Hang mua','Phuong thuc thanh toan','So tien (k)','Giao hang','Ghi chu'],...orders.map(o=>[o.name,o.item,o.pay,o.price,o.del,o.note||''])];
  const csv=rows.map(r=>r.map(c=>'"'+String(c).replaceAll('"','""')+'"').join(',')).join('\n');
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='don-hang.csv';a.click();}
 render();
