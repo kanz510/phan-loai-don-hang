@@ -18,50 +18,66 @@
 .workspace{display:block}.order-list{overflow:visible}.list-tools{position:sticky;top:0;z-index:2;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 3px 8px #233b3608}.list-tools .panel-head{flex-wrap:wrap}.list-tools .controls{border-bottom:1px solid var(--line)}.toolbar-actions,.pagination{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.pagination{font-size:12px;color:var(--muted)}.pagination button{min-height:36px;padding:7px 10px}.list-footer{flex-wrap:wrap}.overview{margin-bottom:12px}.overview-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.compact-stats{margin-bottom:18px;border:1px solid var(--line);border-radius:12px;background:#fff}.compact-stats summary{cursor:pointer;padding:14px 16px;font-size:13px;line-height:1.7}.compact-stats summary strong{color:var(--green)}.compact-stats summary .detail-link{color:var(--muted);font-size:12px;margin-left:8px}.compact-stats .cards{padding:0 14px 14px;margin:0}.table-wrap{border-radius:0 0 12px 12px}.customer{overflow-wrap:anywhere}.count{white-space:nowrap}
 .editor{position:fixed;inset:0;width:min(580px,calc(100% - 32px));max-height:calc(100dvh - 40px);margin:auto;padding:0;border:1px solid var(--line);border-radius:16px;color:inherit;overflow:auto;box-shadow:0 24px 80px #123b3433}.editor::backdrop{background:#183b3259;backdrop-filter:blur(3px)}.editor .panel-head{position:sticky;top:0;z-index:1}.editor form{grid-template-columns:1fr 1fr;gap:16px}.editor .wide,.editor .form-actions,.editor form>.field:first-child,.editor form>.field:nth-child(2){grid-column:1/-1}.editor .form-actions{position:sticky;bottom:-20px;background:#fff;padding:12px 0;margin-bottom:-8px}.editor .dialog-notice{margin:16px 20px 0}.close-dialog{font-size:20px;line-height:1;padding:8px 12px}.modal-open{overflow:hidden}.toast{z-index:6}#listTitle{scroll-margin-top:180px}
 @media(max-width:540px){.overview{align-items:center}.overview-actions{flex-direction:column}.overview-actions button{min-height:38px}.overview p{display:none}.compact-stats summary{padding:10px 12px}.compact-stats summary .detail-link{display:block;margin-left:18px}.list-tools .panel-head{padding:12px}.toolbar-actions{width:100%;justify-content:space-between}.list-tools .controls{padding:10px 12px;gap:8px}.list-tools .controls label{font-size:11px}.list-tools .controls input,.list-tools .controls select{min-height:38px;padding:8px}.list-tools .field{gap:4px}.editor{width:100%;height:100dvh;max-height:100dvh;max-width:none;inset:0;border:0;border-radius:0}.editor form{padding-bottom:calc(20px + env(safe-area-inset-bottom))}.editor .form-actions{bottom:calc(-20px - env(safe-area-inset-bottom));padding-bottom:calc(12px + env(safe-area-inset-bottom))}.list-footer{padding:12px}.list-footer .pagination{width:100%;justify-content:space-between}}
+
+.auth-panel{max-width:420px;margin:36px auto;padding:24px;display:grid;gap:18px}.auth-panel h2{margin:0}.auth-panel form{display:grid;gap:16px}.auth-status{font-size:13px;line-height:1.6;color:#976014}.account-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.account-bar span{font-size:12px;overflow-wrap:anywhere}.shared-status{font-size:12px;color:var(--muted)}.shared-top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}.local-badge{white-space:normal}body[data-busy="true"] #orderForm input,body[data-busy="true"] #orderForm select{opacity:.7}
+@media(max-width:540px){.account-bar{justify-content:flex-end}.account-bar span{max-width:130px}.header-inner{align-items:flex-start}.brand p{display:none}.auth-panel{margin:20px auto}.shared-top{align-items:flex-start}.shared-status{max-width:210px}}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="vendor/supabase.js"></script>
+<script src="shared-cloud.js"></script>
 </head>
 <body>
-<header><div class="header-inner"><div class="brand"><div class="logo" aria-hidden="true">▤</div><div><h1>Phân loại đơn hàng</h1><p>Gọn đơn hàng. Rõ thanh toán. Dễ theo dõi.</p></div></div><span class="local-badge">● Dữ liệu dùng chung qua Supabase</span></div></header>
+<header><div class="header-inner"><div class="brand"><div class="logo" aria-hidden="true">▤</div><div><h1>Phân loại đơn hàng</h1><p>Gọn đơn hàng. Rõ thanh toán. Dễ theo dõi.</p></div></div><div class="account-bar"><span id="accountEmail"></span><button type="button" class="secondary" id="logoutButton" hidden>Đăng xuất</button></div></div></header>
 <main>
+<section class="panel auth-panel" id="authPanel" aria-labelledby="authTitle"><h2 id="authTitle">Đăng nhập cửa hàng</h2><p>Đơn hàng được lưu chung. Chỉ tài khoản được cấp quyền mới truy cập được.</p><form id="loginForm"><div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="username" required></div><div class="field"><label for="password">Mật khẩu</label><input id="password" type="password" autocomplete="current-password" required></div><button type="submit" id="loginButton">Đăng nhập</button></form><p id="authStatus" class="auth-status" role="status" aria-live="polite">Đang kiểm tra phiên đăng nhập…</p></section>
+<div id="sharedApp" hidden><div class="shared-top"><p class="shared-status" id="syncStatus" role="status" aria-live="polite"></p><button type="button" class="secondary" id="refreshButton">↻ Tải lại danh sách</button></div>
 <div id="storageWarning" class="banner" role="alert" hidden></div>
 <section aria-labelledby="overviewTitle"><div class="overview"><div><div class="eyebrow">Không gian quản lý</div><h2 id="overviewTitle">Đơn hàng</h2><p>Theo dõi đơn và cập nhật trạng thái mỗi ngày.</p></div><div class="overview-actions"><button type="button" class="secondary" id="exportButton">↓ Xuất tất cả CSV</button><button type="button" id="addOrder">+ Thêm đơn</button></div></div><details class="compact-stats"><summary><span id="statsSummary"></span><span class="detail-link">Xem thống kê chi tiết</span></summary><div class="cards" id="stats"></div></details></section>
 <div class="workspace">
 <section class="panel order-list" aria-labelledby="listTitle"><div class="list-tools"><div class="panel-head"><h3 id="listTitle" tabindex="-1">Danh sách đơn hàng <span class="count" id="resultCount" aria-live="polite"></span></h3><div class="toolbar-actions"><button class="secondary" type="button" id="clearFilters">Xóa bộ lọc</button><nav class="pagination" id="pagerTop" aria-label="Phân trang đầu danh sách"></nav></div></div>
 <div class="controls"><div class="field search"><label for="q">Tìm kiếm</label><input id="q" type="search" placeholder="Tên khách hoặc hàng mua…"></div><div class="field"><label for="fPay">Thanh toán</label><select id="fPay"><option value="all">Tất cả phương thức</option><option>Chưa rõ</option><option>CK</option><option>COD</option><option>Tiền mặt</option><option>Chưa thanh toán</option></select></div><div class="field"><label for="fDel">Giao hàng</label><select id="fDel"><option value="all">Tất cả trạng thái</option><option>Đã giao</option><option>Chưa giao</option><option>Chưa rõ</option></select></div></div>
 </div><div class="table-wrap"><table aria-label="Danh sách đơn hàng"><thead><tr><th scope="col">Khách hàng / Hàng mua</th><th scope="col">Thanh toán</th><th scope="col">Số tiền</th><th scope="col">Giao hàng</th><th scope="col">Ghi chú</th><th scope="col">Thao tác</th></tr></thead><tbody id="rows"></tbody></table></div><div class="list-footer"><p id="listSummary"></p><nav class="pagination" id="pagerBottom" aria-label="Phân trang cuối danh sách"></nav></div></section>
+<div class="list-footer maintenance"><p class="hint">Sao lưu định kỳ để giữ dữ liệu an toàn.</p><span class="hint">Dữ liệu dùng chung giữa các tài khoản được cấp quyền.</span></div>
 <dialog class="editor" id="editor" aria-labelledby="formTitle" aria-describedby="editNote"><div class="panel-head"><h3 id="formTitle">Thêm đơn mới</h3><div class="toolbar-actions"><span class="tag" id="formMode">Đơn mới</span><button type="button" class="secondary close-dialog" id="closeDialog" aria-label="Đóng biểu mẫu">×</button></div></div><p class="banner dialog-notice" id="dialogNotice" role="status" hidden></p>
 <form id="orderForm"><div class="field"><label for="fName">Tên khách <span class="required">*</span></label><input id="fName" placeholder="Ví dụ: Ngọc Quỳnh" required maxlength="200"></div><div class="field"><label for="fItem">Hàng mua <span class="required">*</span></label><input id="fItem" placeholder="Tên sản phẩm, phân loại…" required maxlength="1000"></div><div class="field"><label for="fPrice">Số tiền · nghìn đồng <span class="required">*</span></label><input id="fPrice" type="number" min="0" max="9000000000" step="0.001" placeholder="340" required aria-describedby="priceHint"><p class="hint" id="priceHint">340 = 340.000 ₫</p></div><div class="field"><label for="fPayIn">Thanh toán</label><select id="fPayIn"><option>Chưa rõ</option><option>CK</option><option>COD</option><option>Tiền mặt</option><option>Chưa thanh toán</option></select></div><div class="field"><label for="fDelIn">Giao hàng</label><select id="fDelIn"><option>Chưa rõ</option><option>Đã giao</option><option>Chưa giao</option></select></div><div class="field wide"><label for="fNote">Ghi chú</label><input id="fNote" placeholder="Quà tặng, thời gian giao…" maxlength="2000"></div><p class="hint wide" id="editNote">Thông tin chưa xác định hãy để “Chưa rõ”.</p><div class="form-actions"><button type="submit" id="saveButton">+ Thêm đơn hàng</button><button type="button" class="secondary" id="cancelEdit">Hủy</button></div></form></dialog>
-</div><p class="footer">Dữ liệu được lưu trên Supabase dùng chung. Xuất CSV định kỳ để sao lưu.</p>
-</main><div class="toast" id="notification" role="status" aria-live="polite"></div>
+</div><p class="footer">Đơn hàng được lưu trên Supabase và cập nhật khi có thay đổi. Xuất CSV định kỳ để sao lưu.</p>
+</div></main><div class="toast" id="notification" role="status" aria-live="polite"></div>
 <script>
-const KEY='phan-loai-don-hang-v2';
 const SUPABASE_URL='https://jsdpdfdyxfxvlxdovnkt.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzZHBkZmR5eGZ4dmx4ZG92bmt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxOTkwODksImV4cCI6MjEwODc3NTA4OX0.fhZsGKrJUCVR5Je8tFmO3X7jJa75xi3TIzRWBupnXG8';
-const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-const toApp = r => ({id:r.id, name:r.customer_name, item:r.item, price:Number(r.amount_k), pay:r.payment_method, del:r.delivery_status, note:r.note||''});
-const toRow = o => ({customer_name:o.name, item:o.item, payment_method:o.pay, amount_k:o.price, delivery_status:o.del, note:o.note||''});
-async function fetchOrders(){ const {data,error}=await sb.from('orders').select('*').order('created_at',{ascending:true}); if(error) throw error; return data.map(toApp); }
+let cloud=null;
+try{cloud=window.createOrdersCloud(SUPABASE_URL,SUPABASE_ANON_KEY);}catch(error){window.cloudStartupError=error.message;}
 const $=id=>document.getElementById(id);
 const PAY=['Chưa rõ','CK','COD','Tiền mặt','Chưa thanh toán'], DEL=['Chưa rõ','Đã giao','Chưa giao'];
-let orders=[],editId=null,storageBlocked=false,toastTimer,currentPage=1;
+let orders=[],editId=null,editVersion=null,toastTimer,currentPage=1,activeUser=null,authorized=false,busy=false,authEpoch=0,refreshSeq=0,channel=null,pollTimer=null;
 const PAGE_SIZE=10;
-function validOrder(o){return o&&((typeof o.id==='number'&&Number.isSafeInteger(o.id))||(typeof o.id==='string'&&o.id.length>0))&&typeof o.name==='string'&&!!o.name.trim()&&typeof o.item==='string'&&!!o.item.trim()&&typeof o.price==='number'&&Number.isFinite(o.price)&&o.price>=0&&o.price<=9000000000&&PAY.includes(o.pay)&&DEL.includes(o.del)&&(o.note===undefined||typeof o.note==='string');}
+function validOrder(o){return o&&Number.isSafeInteger(o.version)&&o.version>0&&((typeof o.id==='number'&&Number.isSafeInteger(o.id))||(typeof o.id==='string'&&o.id.length>0))&&typeof o.name==='string'&&!!o.name.trim()&&typeof o.item==='string'&&!!o.item.trim()&&typeof o.price==='number'&&Number.isFinite(o.price)&&o.price>=0&&o.price<=9000000000&&PAY.includes(o.pay)&&DEL.includes(o.del)&&(o.note===undefined||typeof o.note==='string');}
 function parseOrders(raw){const data=JSON.parse(raw);if(!Array.isArray(data)||!data.every(validOrder)||new Set(data.map(o=>o.id)).size!==data.length)throw new Error('Dữ liệu không hợp lệ');return data;}
 function warning(message){$('storageWarning').textContent=message;$('storageWarning').hidden=!message;}
 function notify(message){clearTimeout(toastTimer);$('notification').textContent=message;if($('editor').open){$('dialogNotice').textContent=message;$('dialogNotice').hidden=false;}toastTimer=setTimeout(()=>{$('notification').textContent='';},4500);}
-async function loadOrders(){
-  if(!sb){ storageBlocked=true; orders=[]; warning('Không tải được thư viện Supabase. Không thể đọc hoặc ghi dữ liệu.'); return; }
-  try{
-    let list=await fetchOrders();
-    orders=list; storageBlocked=false; warning('');
-  }catch(error){
-    storageBlocked=true; warning('Không kết nối được Supabase dùng chung. Hãy kiểm tra mạng rồi tải lại trang. Lỗi: '+(error.message||error));
-    orders=[];
-  }
+function errorText(error){if(error?.status===401||error?.code==='PGRST301')return 'Phiên đăng nhập hết hạn. Vui lòng đăng xuất rồi đăng nhập lại.';return error?.message||'Không kết nối được máy chủ. Vui lòng kiểm tra mạng và thử lại.';}
+function setBusy(value){busy=value;document.body.dataset.busy=String(value);for(const id of ['saveButton','cancelEdit','closeDialog','logoutButton'])$(id).disabled=value;for(const field of $('orderForm').querySelectorAll('input,select'))field.disabled=value;}
+async function refreshOrders({silent=false}={}){
+ if(!authorized)return;const epoch=authEpoch,seq=++refreshSeq;
+ try{const list=await cloud.list();if(epoch!==authEpoch||seq!==refreshSeq||!authorized)return;orders=parseOrders(JSON.stringify(list));render();warning('');$('syncStatus').textContent='Đã đồng bộ · '+new Date().toLocaleTimeString('vi-VN');}
+ catch(error){if(epoch!==authEpoch||seq!==refreshSeq)return;warning('Chưa tải được danh sách mới. '+errorText(error));$('syncStatus').textContent='Kết nối gián đoạn · danh sách có thể chưa cập nhật';if(!silent)notify(errorText(error));}
 }
-// Write first: a failed browser-storage write must never look like a successful save.
-function commit(next){ orders=next; return true; }
+function stopSync(){clearInterval(pollTimer);pollTimer=null;if(channel){cloud.client.removeChannel(channel);channel=null;}}
+async function applySession(session){
+ const user=session?.user||null;if(user&&authorized&&activeUser?.id===user.id)return;
+ const epoch=++authEpoch;stopSync();authorized=false;activeUser=user;orders=[];currentPage=1;cancelEdit();render();$('sharedApp').hidden=true;$('authPanel').hidden=false;$('logoutButton').hidden=!user;$('accountEmail').textContent=user?.email||'';
+ if(!user){$('authStatus').textContent=window.cloudStartupError||'Nhập tài khoản do chủ cửa hàng cấp.';return;}
+ $('authStatus').textContent='Đang kiểm tra quyền truy cập…';
+ try{await cloud.member();if(epoch!==authEpoch)return;authorized=true;$('authPanel').hidden=true;$('sharedApp').hidden=false;await refreshOrders();if(epoch!==authEpoch)return;
+ channel=cloud.client.channel('shared-orders').on('postgres_changes',{event:'*',schema:'public',table:'orders'},()=>{if(!busy)refreshOrders({silent:true});}).subscribe();
+ pollTimer=setInterval(()=>{if(!document.hidden&&!busy)refreshOrders({silent:true});},15000);
+ }catch(error){if(epoch===authEpoch)$('authStatus').textContent=errorText(error);}
+}
+async function startCloud(){
+ if(!cloud){$('authStatus').textContent=window.cloudStartupError;$('loginButton').disabled=true;return;}
+ // Supabase auth callbacks must finish before starting further auth/API work.
+ cloud.client.auth.onAuthStateChange((_event,session)=>setTimeout(()=>applySession(session),0));
+ try{const {data,error}=await cloud.client.auth.getSession();if(error)throw error;await applySession(data.session);}catch(error){$('authStatus').textContent=errorText(error);}
+}
 const fmt=n=>new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(Math.round(n*1000));
 const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase().trim();
 function filteredOrders(){const q=normalize($('q').value),fp=$('fPay').value,fd=$('fDel').value;return orders.filter(o=>(fp==='all'||o.pay===fp)&&(fd==='all'||o.del===fd)&&normalize(o.name+' '+o.item).includes(q));}
@@ -82,33 +98,35 @@ function render(){
  if(!list.length){const row=document.createElement('tr'),td=cell(row,'');td.colSpan=6;td.className='empty';const title=document.createElement('strong');title.textContent=orders.length?'Không tìm thấy đơn phù hợp':'Chưa có đơn hàng';const detail=document.createElement('p');detail.textContent=orders.length?'Thử đổi từ khóa hoặc xóa bộ lọc.':'Nhấn “+ Thêm đơn” để tạo đơn đầu tiên.';td.append(title,detail);row.append(td);fragment.append(row);}
  $('rows').replaceChildren(fragment);
 }
-function cancelEdit(){if($('editor').open)$('editor').close();document.body.classList.remove('modal-open');editId=null;$('orderForm').reset();for(const id of ['fName','fItem'])$(id).setCustomValidity('');$('formTitle').textContent='Thêm đơn mới';$('formMode').textContent='Đơn mới';$('saveButton').textContent='+ Thêm đơn hàng';$('editNote').textContent='Thông tin chưa xác định hãy để “Chưa rõ”.';$('cancelEdit').textContent='Hủy';$('dialogNotice').hidden=true;}
-async function saveOrder(e){e.preventDefault();if(storageBlocked||!sb){notify('Không có kết nối dữ liệu. Không thể lưu.');return;}const o={name:$('fName').value.trim(),item:$('fItem').value.trim(),price:Number($('fPrice').value),pay:$('fPayIn').value,del:$('fDelIn').value,note:$('fNote').value.trim()};
+function cancelEdit(){if($('editor').open)$('editor').close();document.body.classList.remove('modal-open');editId=null;editVersion=null;$('orderForm').reset();for(const id of ['fName','fItem'])$(id).setCustomValidity('');$('formTitle').textContent='Thêm đơn mới';$('formMode').textContent='Đơn mới';$('saveButton').textContent='+ Thêm đơn hàng';$('editNote').textContent='Thông tin chưa xác định hãy để “Chưa rõ”.';$('cancelEdit').textContent='Hủy';$('dialogNotice').hidden=true;}
+async function saveOrder(e){e.preventDefault();if(busy||!authorized)return;const o={name:$('fName').value.trim(),item:$('fItem').value.trim(),price:Number($('fPrice').value),pay:$('fPayIn').value,del:$('fDelIn').value,note:$('fNote').value.trim()};
  for(const id of ['fName','fItem']){const input=$(id);input.setCustomValidity(input.value.trim()?'':'Vui lòng nhập nội dung, không chỉ khoảng trắng.');if(!input.reportValidity())return;}
- const id=editId??crypto.randomUUID();if(!validOrder({id,...o})||$('fPrice').value.trim()===''){notify('Vui lòng kiểm tra thông tin và số tiền hợp lệ.');return;}
+ const id=editId??crypto.randomUUID();if(!validOrder({id,version:editVersion??1,...o})||$('fPrice').value.trim()===''){notify('Vui lòng kiểm tra thông tin và số tiền hợp lệ.');return;}
  const isEditing=editId!==null;if(isEditing&&!orders.some(x=>x.id===editId)){cancelEdit();notify('Đơn này không còn tồn tại. Vui lòng chọn lại.');return;}
- let savedId=id;
-  try{
-    if(isEditing){ const {error}=await sb.from('orders').update(toRow(o)).eq('id',editId); if(error) throw error; orders=orders.map(x=>x.id===editId?{...x,...o}:x); }
-    else { const {data,error}=await sb.from('orders').insert(toRow(o)).select().single(); if(error) throw error; savedId=data.id; orders=[{id:savedId,...o},...orders]; }
-  }catch(error){ notify('Lưu lên Supabase không thành công: '+(error.message||error)); return; }
-  if(!isEditing)currentPage=1;cancelEdit();render();if(isEditing)$('listTitle').focus({preventScroll:true});notify(isEditing?'Đã cập nhật đơn hàng.':filteredOrders().some(x=>x.id===savedId)?'Đã thêm đơn hàng.':'Đã thêm đơn hàng. Đơn đang bị ẩn bởi bộ lọc.');
+ const epoch=authEpoch;const version=editVersion;setBusy(true);let saved;
+ try{saved=isEditing?await cloud.update({id,...o},version):await cloud.insert(o);if(epoch!==authEpoch)return;
+ refreshSeq++;orders=isEditing?orders.map(x=>x.id===id?saved:x):[saved,...orders];if(!isEditing)currentPage=1;cancelEdit();render();notify(isEditing?'Đã cập nhật đơn hàng.':filteredOrders().some(x=>x.id===saved.id)?'Đã lưu đơn hàng dùng chung.':'Đã lưu đơn hàng. Đơn đang bị ẩn bởi bộ lọc.');
+ }catch(error){if(epoch===authEpoch)notify('Chưa lưu được. '+errorText(error));}
+ finally{setBusy(false);}
 }
-function editOrder(id){const o=orders.find(x=>x.id===id);if(!o)return;editId=id;for(const [field,key] of [['fName','name'],['fItem','item'],['fPrice','price'],['fPayIn','pay'],['fDelIn','del'],['fNote','note']]){$(field).value=o[key]??'';if($(field).setCustomValidity)$(field).setCustomValidity('');}$('formTitle').textContent='Chỉnh sửa đơn hàng';$('formMode').textContent='Đang sửa';$('saveButton').textContent='Lưu thay đổi';$('cancelEdit').textContent='Hủy sửa';$('editNote').textContent='Đang sửa đơn của '+o.name;openEditor();}
-function openEditor(){$('dialogNotice').hidden=true;if(!$('editor').open)$('editor').showModal();document.body.classList.add('modal-open');$('fName').focus();}
-function addOrder(){cancelEdit();openEditor();}
 
-async function delOrder(id){if(storageBlocked||!sb){notify('Không có kết nối dữ liệu. Không thể xóa.');return;}const order=orders.find(o=>o.id===id);if(!order||!confirm(`Xóa đơn của ${order.name}? Thao tác này không thể hoàn tác.`))return;try{const {error}=await sb.from('orders').delete().eq('id',id);if(error) throw error;}catch(error){notify('Xóa trên Supabase không thành công: '+(error.message||error));return;}orders=orders.filter(o=>o.id!==id);if(editId===id)cancelEdit();render();notify('Đã xóa đơn hàng.');}
+function editOrder(id){if(!authorized||busy)return;const o=orders.find(x=>x.id===id);if(!o)return;editId=id;editVersion=o.version;for(const [field,key] of [['fName','name'],['fItem','item'],['fPrice','price'],['fPayIn','pay'],['fDelIn','del'],['fNote','note']]){$(field).value=o[key]??'';if($(field).setCustomValidity)$(field).setCustomValidity('');}$('formTitle').textContent='Chỉnh sửa đơn hàng';$('formMode').textContent='Đang sửa';$('saveButton').textContent='Lưu thay đổi';$('cancelEdit').textContent='Hủy sửa';$('editNote').textContent='Đang sửa đơn của '+o.name;openEditor();}
+function openEditor(){$('dialogNotice').hidden=true;if(!$('editor').open)$('editor').showModal();document.body.classList.add('modal-open');$('fName').focus();}
+function addOrder(){if(!authorized||busy)return;cancelEdit();openEditor();}
+
+async function delOrder(id){if(!authorized||busy)return;const order=orders.find(o=>o.id===id);if(!order||!confirm(`Xóa đơn của ${order.name}? Thao tác này không thể hoàn tác.`))return;const epoch=authEpoch;setBusy(true);try{await cloud.remove(order);if(epoch!==authEpoch)return;refreshSeq++;orders=orders.filter(o=>o.id!==id);if(editId===id)cancelEdit();render();notify('Đã xóa đơn hàng.');}catch(error){if(epoch===authEpoch)notify(errorText(error));}finally{setBusy(false);}}
 function csvCell(value){let text=String(value??'');if(typeof value==='string'&&/^(?:[\t\r\n]|[\s\uFEFF]*[=+\-@])/.test(text))text="'"+text;return '"'+text.replaceAll('"','""')+'"';}
 function exportCSV(){const rows=[['Tên khách','Hàng mua','Phương thức thanh toán','Số tiền (nghìn đồng)','Giao hàng','Ghi chú'],...orders.map(o=>[o.name,o.item,o.pay,o.price,o.del,o.note||''])];const csv=rows.map(r=>r.map(csvCell).join(',')).join('\r\n');const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download='don-hang-'+new Date().toISOString().slice(0,10)+'.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);notify(`Đã xuất ${orders.length} đơn hàng.`);}
 function filterChanged(){currentPage=1;render();}
 $('q').addEventListener('input',filterChanged);for(const id of ['fPay','fDel'])$(id).addEventListener('change',filterChanged);
 $('clearFilters').addEventListener('click',()=>{$('q').value='';$('fPay').value='all';$('fDel').value='all';filterChanged();});
-$('addOrder').addEventListener('click',addOrder);$('closeDialog').addEventListener('click',cancelEdit);$('editor').addEventListener('cancel',event=>{event.preventDefault();cancelEdit();});
+$('addOrder').addEventListener('click',addOrder);$('closeDialog').addEventListener('click',cancelEdit);$('editor').addEventListener('cancel',event=>{event.preventDefault();if(!busy)cancelEdit();});
 $('orderForm').addEventListener('submit',saveOrder);$('cancelEdit').addEventListener('click',cancelEdit);$('exportButton').addEventListener('click',exportCSV);for(const id of ['fName','fItem'])$(id).addEventListener('input',()=>$(id).setCustomValidity(''));
-// Shared updates: reload when anyone changes the Supabase table.
-if(sb){ sb.channel('orders-changes').on('postgres_changes',{event:'*',schema:'public',table:'orders'},async()=>{ try{ orders=await fetchOrders(); render(); notify('Đã có đơn mới từ người khác, danh sách đã tải lại.'); }catch(e){} }).subscribe(); }
-loadOrders().then(render);
+$('loginForm').addEventListener('submit',async event=>{event.preventDefault();if(!cloud)return;$('loginButton').disabled=true;$('authStatus').textContent='Đang đăng nhập…';try{const {error}=await cloud.client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;$('password').value='';}catch(error){$('authStatus').textContent='Đăng nhập không thành công. '+errorText(error);}finally{$('loginButton').disabled=false;}});
+$('logoutButton').addEventListener('click',async()=>{if(busy)return;const {error}=await cloud.client.auth.signOut({scope:'local'});if(error){notify(errorText(error));return;}applySession(null);});
+$('refreshButton').addEventListener('click',()=>refreshOrders());
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!busy)refreshOrders({silent:true});});
+render();startCloud();
 </script>
 </body>
 </html>
