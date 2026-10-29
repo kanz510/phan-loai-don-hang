@@ -23,7 +23,7 @@ begin
  perform pg_advisory_xact_lock(719510,202610);
  select * into personal from public.order_chat_usage where usage_day=today and subject=actor::text;
  select requests into total_requests from public.order_chat_usage where usage_day=today and subject='shop';
- if coalesce(personal.requests,0)>=30 or coalesce(total_requests,0)>=300
+ if coalesce(personal.requests,0)>=300 or coalesce(total_requests,0)>=3000
  or (personal.last_request is not null and personal.last_request>clock_timestamp()-interval '3 seconds') then return false; end if;
  insert into public.order_chat_usage(usage_day,subject,requests,last_request)
  values(today,actor::text,1,clock_timestamp())

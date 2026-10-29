@@ -2,11 +2,44 @@
 (()=>{
  if(page==='account')return;
  const host=document.createElement('aside');host.className='may-chat';host.hidden=true;
- host.innerHTML=`<button type="button" class="may-chat-launch" id="chatLauncher" aria-expanded="false" aria-controls="chatPanel" aria-label="Mở trò chuyện với Em Kem"><span class="em-kem-bubble" aria-hidden="true">May cần giúp gì ?</span><img class="em-kem-poodle" src="assets/em-kem-poodle-animated.webp" width="96" height="100" alt="" decoding="async"></button><section id="chatPanel" class="may-chat-panel" aria-labelledby="chatTitle" hidden><header class="may-chat-head"><div><strong id="chatTitle">Em Kem</strong><small id="chatConnection">Đang kiểm tra kết nối AI…</small></div><button type="button" class="secondary" id="chatClose" aria-label="Đóng trò chuyện">✕</button></header><div class="may-chat-mode"><label for="chatMode">Chế độ</label><select id="chatMode"><option value="quick">Tra cứu nhanh</option><option value="ai">AI · hội thoại tự nhiên</option></select></div><p class="may-chat-note" id="chatPrivacy">Xem tất cả đơn bạn có quyền truy cập, không phụ thuộc bộ lọc trang. Thời gian tính theo ngày tạo đơn tại Việt Nam.</p><div id="chatMessages" class="may-chat-messages" role="log" aria-live="polite" aria-relevant="additions" tabindex="0" aria-label="Nội dung trò chuyện"></div><div class="may-chat-suggestions" aria-label="Câu hỏi gợi ý"><button type="button" class="secondary">Đơn chưa giao</button><button type="button" class="secondary">Hoa hồng tháng này</button><button type="button" class="secondary">Tổng quan hôm nay</button></div><form id="chatForm" class="may-chat-form"><label for="chatInput">Bạn muốn xem gì?</label><div><input id="chatInput" maxlength="1000" autocomplete="off" placeholder="Ví dụ: Tìm đơn của Lan" required><button type="submit">Gửi</button></div></form></section>`;
+ host.innerHTML=`<button type="button" class="may-chat-launch" id="chatLauncher" aria-expanded="false" aria-controls="chatPanel" aria-label="Mở trò chuyện với Em Kem"><span class="em-kem-bubble" aria-hidden="true">May cần giúp gì ?</span><img class="em-kem-poodle" src="assets/em-kem-poodle-animated.webp" width="96" height="100" alt="" decoding="async"></button><section id="chatPanel" class="may-chat-panel" aria-labelledby="chatTitle" hidden><header class="may-chat-head"><div><strong id="chatTitle">Em Kem</strong><small id="chatConnection">Đang kiểm tra kết nối AI…</small></div><button type="button" class="secondary" id="chatClose" aria-label="Thu nhỏ trò chuyện" title="Thu nhỏ — giữ nguyên hội thoại">−</button></header><div class="may-chat-mode"><label for="chatMode">Chế độ</label><select id="chatMode"><option value="quick">Tra cứu nhanh</option><option value="ai">AI · hội thoại tự nhiên</option></select></div><p class="may-chat-note" id="chatPrivacy">Xem tất cả đơn bạn có quyền truy cập, không phụ thuộc bộ lọc trang. Thời gian tính theo ngày tạo đơn tại Việt Nam.</p><div id="chatMessages" class="may-chat-messages" role="log" aria-live="polite" aria-relevant="additions" tabindex="0" aria-label="Nội dung trò chuyện"></div><div class="may-chat-suggestions" aria-label="Câu hỏi gợi ý"><button type="button" class="secondary">Đơn chưa giao</button><button type="button" class="secondary">Hoa hồng tháng này</button><button type="button" class="secondary">Tổng quan hôm nay</button></div><form id="chatForm" class="may-chat-form"><label for="chatInput">Bạn muốn xem gì?</label><div><input id="chatInput" maxlength="1000" autocomplete="off" placeholder="Ví dụ: Tìm đơn của Lan" required><button type="submit">Gửi</button></div></form></section>`;
  document.body.append(host);
  const launcher=$('chatLauncher'),panel=$('chatPanel'),input=$('chatInput'),messages=$('chatMessages');
  const help='Bạn có thể hỏi “Đơn chưa giao”, “Hoa hồng tháng này”, “Tổng quan hôm nay”, “Đơn đã hủy tháng 10/2026”, “Tổng quan năm 2026” hoặc “Tìm đơn của Lan”. Tôi chỉ tra cứu, không sửa hay hủy đơn.';
  let identity=null,epoch=0,pending=false,controller=null,history=[],modeTouched=false;
+
+ // Persist bounded text-only conversations per authenticated account, for seven days.
+ let restoringChat=false;
+ const chatKey=()=>identity?'em-kem-chat-v1:'+identity:null;
+ function safeChatLink(value){if(typeof value!=='string')return null;try{const url=new URL(value,location.href),ordersUrl=new URL('orders.html',location.href);return url.origin===ordersUrl.origin&&url.pathname===ordersUrl.pathname?'orders.html'+url.search:null;}catch{return null;}}
+ function saveConversation(){
+  if(restoringChat||!identity||!authorized)return;
+  const transcript=[...messages.querySelectorAll('.may-chat-message')].slice(-40).map(node=>({text:(node.querySelector('p')?.textContent||'').slice(0,6000),who:node.classList.contains('user')?'user':node.classList.contains('source')?'bot source':'bot',href:safeChatLink(node.querySelector('a')?.getAttribute('href'))}));
+  try{localStorage.setItem(chatKey(),JSON.stringify({version:1,updated:Date.now(),transcript,history:history.slice(-8),mode:$('chatMode').value,draft:input.value.slice(0,1000)}));}catch{}
+ }
+ function restoreConversation(){
+  if(!identity||!authorized)return false;
+  let saved;try{const raw=localStorage.getItem(chatKey());if(!raw||raw.length>300000)return false;saved=JSON.parse(raw);}catch{return false;}
+  if(saved?.version!==1||!Number.isFinite(saved.updated)||Date.now()-saved.updated>7*86400000||!Array.isArray(saved.transcript)||saved.transcript.length>40||!Array.isArray(saved.history)||saved.history.length>8)return false;
+  if(saved.transcript.some(m=>!m||typeof m.text!=='string'||m.text.length>6000||!['user','bot','bot source'].includes(m.who))||saved.history.some(m=>!m||!['user','assistant'].includes(m.role)||typeof m.content!=='string'||m.content.length>2000))return false;
+  restoringChat=true;
+  try{
+   messages.replaceChildren();history=saved.history.map(m=>({role:m.role,content:m.content}));
+   $('chatMode').value=saved.mode==='ai'?'ai':'quick';modeTouched=true;modeInfo();
+   for(const m of saved.transcript)add(m.text,m.who,safeChatLink(m.href));
+   input.value=typeof saved.draft==='string'?saved.draft.slice(0,1000):'';
+   return saved.transcript.length>0;
+  }finally{restoringChat=false;}
+ }
+ let draftSaveTimer;
+ input.addEventListener('input',()=>{clearTimeout(draftSaveTimer);draftSaveTimer=setTimeout(saveConversation,200);});
+ window.addEventListener('pagehide',saveConversation);
+ window.addEventListener('storage',event=>{
+  if(event.key!==chatKey()||!event.newValue||pending||!authorized)return;
+  const draft=input.value,editing=document.activeElement===input;
+  restoreConversation();if(editing)input.value=draft;
+ });
+
  const endpoint=SUPABASE_URL+'/functions/v1/order-chat';
  function lock(value){pending=value;$('chatForm').setAttribute('aria-busy',String(value));input.disabled=value;$('chatForm').querySelector('button').disabled=value;$('chatMode').disabled=value;for(const b of host.querySelectorAll('.may-chat-suggestions button'))b.disabled=value;}
  function modeInfo(){const ai=$('chatMode').value==='ai';$('chatPrivacy').hidden=ai;$('chatPrivacy').textContent=ai?'':'Tra cứu nhanh không gửi dữ liệu đến AI. Xem tất cả đơn được cấp quyền, không phụ thuộc bộ lọc trang. Thời gian theo ngày tạo đơn tại Việt Nam.';}
@@ -15,7 +48,7 @@
  function sourceLink(source){if(!source||!Number.isSafeInteger(source.count)||source.count<0)return null;const query=new URLSearchParams();for(const [key,allowed] of [['delivery',DEL],['payment',PAY]]){const values=source[key];if(values!==null&&(!Array.isArray(values)||values.length!==1||!allowed.includes(values[0])))return null;if(values)query.set(key==='delivery'?'del':'pay',values[0]);}if(source.customer&&source.product)return null;const term=source.customer||source.product;if(typeof term==='string')query.set('q',term);if(source.from||source.to){if((source.from&&!validDateKey(source.from))||(source.to&&!validDateKey(source.to)))return null;query.set('time','range');if(source.from)query.set('from',source.from);if(source.to)query.set('to',source.to);}return 'orders.html'+(query.size?'?'+query:'');}
  function addSources(sources){if(!Array.isArray(sources))return;for(const source of sources.slice(0,4)){if(!Number.isSafeInteger(source.count)||source.count<0||![source.active_order_value_vnd,source.received_commission_vnd].every(v=>typeof v==='string'&&/^\d{1,30}$/.test(v)))continue;const period=source.from||source.to?`${source.from?displayDate(source.from):'Từ đầu'} – ${source.to?displayDate(source.to):'đến nay'}`:'Tất cả thời gian';add(`Đối chiếu từ hệ thống · ${period}${source.customer?' · Khách: '+source.customer:''}${source.product?' · Hàng: '+source.product:''}${source.delivery?' · '+source.delivery.join(', '):''}${source.payment?' · '+source.payment.join(', '):''}\n${source.count} đơn · Giá trị chưa hủy: ${fmtCommission(BigInt(source.active_order_value_vnd))} · Hoa hồng: ${fmtCommission(BigInt(source.received_commission_vnd))}.`,'bot source',sourceLink(source));}}
  modeInfo();$('chatMode').addEventListener('change',()=>{modeTouched=true;history=[];modeInfo();add($('chatMode').value==='ai'?'Đã chọn AI. Bắt đầu ngữ cảnh mới; bạn có thể hỏi tự nhiên.':'Đã chọn Tra cứu nhanh, không dùng AI. '+help);});
- function add(text,who='bot',href){const node=document.createElement('div');node.className='may-chat-message '+who;const body=document.createElement('p');body.textContent=text;node.append(body);if(href){const link=document.createElement('a');link.textContent='Xem danh sách đơn →';link.href=href;node.append(link);}messages.append(node);while(messages.children.length>40)messages.firstElementChild.remove();messages.scrollTop=messages.scrollHeight;}
+ function add(text,who='bot',href){const node=document.createElement('div');node.className='may-chat-message '+who;const body=document.createElement('p');body.textContent=text;node.append(body);if(href){const link=document.createElement('a');link.textContent='Xem danh sách đơn →';link.href=href;node.append(link);}messages.append(node);while(messages.children.length>40)messages.firstElementChild.remove();messages.scrollTop=messages.scrollHeight;saveConversation();}
 
  // Drag only the launcher: a short tap still opens the conversation.
  const positionKey='em-kem-position-v1';let mascotPosition=null,drag=null,suppressClickUntil=0;
@@ -64,8 +97,8 @@
  });
  window.addEventListener('resize',placeMascot);window.visualViewport?.addEventListener('resize',placeMascot);
 
- function open(value){stopPet();closeCare();if(!value)schedulePet();panel.hidden=!value;launcher.setAttribute('aria-expanded',String(value));if(value){placePanel();input.focus();}else launcher.focus();}
- window.mayChatSync=()=>{const next=authorized?activeUser?.id:null;if(identity!==next){identity=next;epoch++;controller?.abort();controller=null;lock(false);history=[];modeTouched=false;$('chatMode').value='quick';modeInfo();$('chatConnection').textContent='Đang kiểm tra kết nối AI…';messages.replaceChildren();input.value='';panel.hidden=true;launcher.setAttribute('aria-expanded','false');if(next){add('Chào May! 🫶🏻 '+help);checkAI(epoch);}}host.hidden=!authorized;placeMascot();};
+ function open(value){stopPet();closeCare();if(!value)schedulePet();panel.hidden=!value;launcher.setAttribute('aria-expanded',String(value));if(value){placePanel();input.focus();}else launcher.focus();saveConversation();}
+ window.mayChatSync=()=>{const next=authorized?activeUser?.id:null;if(identity!==next){identity=next;epoch++;controller?.abort();controller=null;lock(false);history=[];modeTouched=false;$('chatMode').value='quick';modeInfo();$('chatConnection').textContent='Đang kiểm tra kết nối AI…';messages.replaceChildren();input.value='';panel.hidden=true;launcher.setAttribute('aria-expanded','false');if(next){if(!restoreConversation())add('Chào May! 🫶🏻 '+help);checkAI(epoch);}}host.hidden=!authorized;placeMascot();};
 
  // Keep the mascot still when the visitor requests reduced motion.
  const mascot=host.querySelector('.em-kem-poodle'),motion=window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -194,9 +227,9 @@
   if(summary&&!state&&!search){const count=s=>list.filter(o=>o.del===s).length;return {text:`Tổng quan · ${scope.label}\n${list.length} đơn: ${count('Chưa giao')} chưa giao · ${count('Đã giao')} đã giao · ${count('Đã hủy')} đã hủy · ${count('Chưa rõ')} chưa rõ.\nGiá trị đơn chưa hủy: ${fmt(list.filter(o=>o.del!=='Đã hủy').reduce((s,o)=>s+o.price,0))}.\nHoa hồng đã nhận: ${fmtCommission(sumCommissions(list))} (kể cả đơn hủy).`,href};}
   const lines=list.slice(0,5).map(o=>`• ${o.name} — ${o.item}\n  ${o.del} · ${fmt(o.price)} · ${displayDate(orderDateKey(o))}`);return {text:`${list.length} đơn${state?' '+state.toLowerCase():''} · ${scope.label}.${lines.length?'\n'+lines.join('\n'): '\nKhông tìm thấy đơn phù hợp.'}${list.length>5?'\nHiện 5 đơn đầu. Mở danh sách để xem tất cả.':''}`,href};
  }
- async function submit(text){text=text.trim();if(!text||pending||!authorized)return;const version=epoch;add(text,'user');input.value='';if($('chatMode').value!=='ai'){const reply=answer(text);add(reply.text,'bot',reply.href);return;}
+ async function submit(text){text=text.trim();if(!text||pending||!authorized)return;const version=epoch;add(text,'user');input.value='';saveConversation();if($('chatMode').value!=='ai'){const reply=answer(text);add(reply.text,'bot',reply.href);return;}
   lock(true);controller=new AbortController();const timeout=setTimeout(()=>controller?.abort(),50000);const waiting=document.createElement('p');waiting.className='may-chat-wait';waiting.setAttribute('role','status');waiting.textContent='May đang xem dữ liệu và trả lời…';messages.append(waiting);messages.scrollTop=messages.scrollHeight;
-  try{const previous=history.slice(-8);while(previous.reduce((s,m)=>s+m.content.length,0)+text.length>9500)previous.shift();const payload=await api('POST',{messages:[...previous,{role:'user',content:text}]},controller.signal);if(version!==epoch||!authorized)return;if(typeof payload.reply!=='string'||!payload.reply.trim())throw new Error('AI chưa trả lời được. Hãy thử lại.');add(payload.reply);addSources(payload.sources);history=[...previous,{role:'user',content:text},{role:'assistant',content:payload.reply.slice(0,1500)}].slice(-8);$('chatConnection').textContent='Em Kem đã sẵn sàng rùi nè <3';}
+  try{const previous=history.slice(-8);while(previous.reduce((s,m)=>s+m.content.length,0)+text.length>9500)previous.shift();const payload=await api('POST',{messages:[...previous,{role:'user',content:text}]},controller.signal);if(version!==epoch||!authorized)return;if(typeof payload.reply!=='string'||!payload.reply.trim())throw new Error('AI chưa trả lời được. Hãy thử lại.');add(payload.reply);addSources(payload.sources);history=[...previous,{role:'user',content:text},{role:'assistant',content:payload.reply.slice(0,1500)}].slice(-8);saveConversation();$('chatConnection').textContent='Em Kem đã sẵn sàng rùi nè <3';}
   catch(error){if(version===epoch&&authorized)add(error.name==='AbortError'?'AI phản hồi chậm. Hãy thử lại hoặc chọn Tra cứu nhanh.':error.message||'Chưa kết nối được AI.');}
   finally{clearTimeout(timeout);waiting.remove();if(version===epoch){controller=null;lock(false);if(!panel.hidden)input.focus();}}
  }
