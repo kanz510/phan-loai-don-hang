@@ -2,7 +2,7 @@
 (()=>{
  if(page==='account')return;
  const host=document.createElement('aside');host.className='may-chat';host.hidden=true;
- host.innerHTML=`<button type="button" class="may-chat-launch" id="chatLauncher" aria-expanded="false" aria-controls="chatPanel" aria-label="Mở trò chuyện với Em Kem"><span class="em-kem-bubble" aria-hidden="true">May cần giúp gì ?</span><img class="em-kem-poodle" src="assets/em-kem-poodle.webp" width="96" height="100" alt="" decoding="async"></button><section id="chatPanel" class="may-chat-panel" aria-labelledby="chatTitle" hidden><header class="may-chat-head"><div><strong id="chatTitle">Em Kem</strong><small id="chatConnection">Đang kiểm tra kết nối AI…</small></div><button type="button" class="secondary" id="chatClose" aria-label="Đóng trò chuyện">✕</button></header><div class="may-chat-mode"><label for="chatMode">Chế độ</label><select id="chatMode"><option value="quick">Tra cứu nhanh</option><option value="ai">AI · hội thoại tự nhiên</option></select></div><p class="may-chat-note" id="chatPrivacy">Xem tất cả đơn bạn có quyền truy cập, không phụ thuộc bộ lọc trang. Thời gian tính theo ngày tạo đơn tại Việt Nam.</p><div id="chatMessages" class="may-chat-messages" role="log" aria-live="polite" aria-relevant="additions" tabindex="0" aria-label="Nội dung trò chuyện"></div><div class="may-chat-suggestions" aria-label="Câu hỏi gợi ý"><button type="button" class="secondary">Đơn chưa giao</button><button type="button" class="secondary">Hoa hồng tháng này</button><button type="button" class="secondary">Tổng quan hôm nay</button></div><form id="chatForm" class="may-chat-form"><label for="chatInput">Bạn muốn xem gì?</label><div><input id="chatInput" maxlength="1000" autocomplete="off" placeholder="Ví dụ: Tìm đơn của Lan" required><button type="submit">Gửi</button></div></form></section>`;
+ host.innerHTML=`<button type="button" class="may-chat-launch" id="chatLauncher" aria-expanded="false" aria-controls="chatPanel" aria-label="Mở trò chuyện với Em Kem"><span class="em-kem-bubble" aria-hidden="true">May cần giúp gì ?</span><img class="em-kem-poodle" src="assets/em-kem-poodle-animated.webp" width="96" height="100" alt="" decoding="async"></button><section id="chatPanel" class="may-chat-panel" aria-labelledby="chatTitle" hidden><header class="may-chat-head"><div><strong id="chatTitle">Em Kem</strong><small id="chatConnection">Đang kiểm tra kết nối AI…</small></div><button type="button" class="secondary" id="chatClose" aria-label="Đóng trò chuyện">✕</button></header><div class="may-chat-mode"><label for="chatMode">Chế độ</label><select id="chatMode"><option value="quick">Tra cứu nhanh</option><option value="ai">AI · hội thoại tự nhiên</option></select></div><p class="may-chat-note" id="chatPrivacy">Xem tất cả đơn bạn có quyền truy cập, không phụ thuộc bộ lọc trang. Thời gian tính theo ngày tạo đơn tại Việt Nam.</p><div id="chatMessages" class="may-chat-messages" role="log" aria-live="polite" aria-relevant="additions" tabindex="0" aria-label="Nội dung trò chuyện"></div><div class="may-chat-suggestions" aria-label="Câu hỏi gợi ý"><button type="button" class="secondary">Đơn chưa giao</button><button type="button" class="secondary">Hoa hồng tháng này</button><button type="button" class="secondary">Tổng quan hôm nay</button></div><form id="chatForm" class="may-chat-form"><label for="chatInput">Bạn muốn xem gì?</label><div><input id="chatInput" maxlength="1000" autocomplete="off" placeholder="Ví dụ: Tìm đơn của Lan" required><button type="submit">Gửi</button></div></form></section>`;
  document.body.append(host);
  const launcher=$('chatLauncher'),panel=$('chatPanel'),input=$('chatInput'),messages=$('chatMessages');
  const help='Bạn có thể hỏi “Đơn chưa giao”, “Hoa hồng tháng này”, “Tổng quan hôm nay”, “Đơn đã hủy tháng 10/2026”, “Tổng quan năm 2026” hoặc “Tìm đơn của Lan”. Tôi chỉ tra cứu, không sửa hay hủy đơn.';
@@ -18,7 +18,35 @@
  function add(text,who='bot',href){const node=document.createElement('div');node.className='may-chat-message '+who;const body=document.createElement('p');body.textContent=text;node.append(body);if(href){const link=document.createElement('a');link.textContent='Xem danh sách đơn →';link.href=href;node.append(link);}messages.append(node);while(messages.children.length>40)messages.firstElementChild.remove();messages.scrollTop=messages.scrollHeight;}
  function open(value){panel.hidden=!value;launcher.setAttribute('aria-expanded',String(value));if(value)input.focus();else launcher.focus();}
  window.mayChatSync=()=>{const next=authorized?activeUser?.id:null;if(identity!==next){identity=next;epoch++;controller?.abort();controller=null;lock(false);history=[];modeTouched=false;$('chatMode').value='quick';modeInfo();$('chatConnection').textContent='Đang kiểm tra kết nối AI…';messages.replaceChildren();input.value='';panel.hidden=true;launcher.setAttribute('aria-expanded','false');if(next){add('Chào May! 🫶🏻 '+help);checkAI(epoch);}}host.hidden=!authorized;};
- launcher.addEventListener('click',()=>open(panel.hidden));$('chatClose').addEventListener('click',()=>open(false));host.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden){e.preventDefault();open(false);}});
+
+ // Keep the mascot still when the visitor requests reduced motion.
+ const mascot=host.querySelector('.em-kem-poodle'),motion=window.matchMedia('(prefers-reduced-motion: reduce)');
+ const syncMascot=()=>{mascot.src=motion.matches?'assets/em-kem-poodle.webp':'assets/em-kem-poodle-animated.webp';};
+ syncMascot();motion.addEventListener?.('change',syncMascot);
+ // A short synthesized woof, only after a deliberate click; never autoplay.
+ let barkAudio=null,lastBark=0;
+ async function bark(){
+  if(Date.now()-lastBark<2500)return;lastBark=Date.now();
+  try{
+   const AudioContext=window.AudioContext||window.webkitAudioContext;if(!AudioContext)return;
+   barkAudio??=new AudioContext();await barkAudio.resume();
+   if(barkAudio.state!=='running')return;
+   const t=barkAudio.currentTime;
+   for(const offset of [0,0.28]){
+    const start=t+offset,voice=barkAudio.createOscillator(),noise=barkAudio.createBufferSource(),filter=barkAudio.createBiquadFilter(),gain=barkAudio.createGain();
+    const buffer=barkAudio.createBuffer(1,Math.ceil(barkAudio.sampleRate*0.2),barkAudio.sampleRate),samples=buffer.getChannelData(0);
+    for(let i=0;i<samples.length;i++)samples[i]=(Math.random()*2-1)*0.35;
+    noise.buffer=buffer;voice.type='sawtooth';voice.frequency.setValueAtTime(180,start);voice.frequency.exponentialRampToValueAtTime(75,start+0.17);
+    filter.type='bandpass';filter.frequency.setValueAtTime(800,start);filter.frequency.exponentialRampToValueAtTime(350,start+0.18);filter.Q.value=0.8;
+    gain.gain.setValueAtTime(0,start);gain.gain.linearRampToValueAtTime(0.12,start+0.018);gain.gain.exponentialRampToValueAtTime(0.001,start+0.19);
+    voice.connect(filter);noise.connect(filter);filter.connect(gain);gain.connect(barkAudio.destination);
+    voice.start(start);noise.start(start);voice.stop(start+0.2);noise.stop(start+0.2);
+    voice.onended=()=>{voice.disconnect();noise.disconnect();filter.disconnect();gain.disconnect();};
+   }
+  }catch{/* Sound is optional; the chat remains usable when audio is blocked. */}
+ }
+
+ launcher.addEventListener('click',()=>{if(panel.hidden)bark();open(panel.hidden);});$('chatClose').addEventListener('click',()=>open(false));host.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden){e.preventDefault();open(false);}});
  function period(q,now){const today=orderDateKey({createdAt:now.toISOString()}),year=Number(today.slice(0,4)),month=Number(today.slice(5,7));const query=new URLSearchParams();let label='tất cả thời gian',test=()=>true;
   const exact=q.match(/\b(?:ngay\s+)?(\d{1,2})\/(\d{1,2})\/(\d{4})\b/);
   const dated=q.match(/\bthang\s+(\d{1,2})(?:\s*[\/\-]\s*(\d{4})|\s+nam\s+(\d{4}))?\b/);
