@@ -55,3 +55,12 @@ Animation giới hạn ở mở trang, thao tác nhanh, hover/nhấn nút và ch
 Script nâng cấp riêng `supabase-cancel-orders.sql` thay duy nhất ràng buộc nhập liệu trong transaction và có thể chạy lại. Các script schema đầy đủ cũng chấp nhận trạng thái mới. Chưa có quyền quản trị Supabase trong phiên này nên chưa áp dụng script vào hệ thống thật. Frontend tương thích ba trạng thái cũ và báo lỗi nếu hủy bị ràng buộc máy chủ từ chối.
 
 Kiểm thử browser đạt: hủy thành công/không xác nhận/server chưa hỗ trợ/xung đột phiên bản; bản ghi, số tiền và thanh toán được giữ; không hiện nút hủy lần hai; bộ lọc hủy giữ sau reload; bốn màu nền khác nhau; tên May ở title/header mọi trang; các luồng cũ và responsive 375/768/1440px. SQL/PGlite đạt: constraint cũ từ chối trạng thái mới; nâng cấp hủy chạy hai lần không đổi bản ghi; thành viên hủy được, tăng version, giữ tiền/thanh toán và từ chối cập nhật với version cũ. Các kiểm thử không ghi vào dự án Supabase thật.
+
+
+## Phương án 3 — Peach Boutique
+
+Áp dụng lựa chọn người dùng trên toàn bộ CSS: nền `#FFF5F0`, panel `#FFFCF9`, chữ `#593E36`, nút coral `#F28076` với chữ nâu `#512A24`, khối peach/kem và điều hướng blush. Tiêu đề trang/đăng nhập/biểu mẫu dùng serif; dữ liệu, nhãn nhập và nút giữ sans-serif. Logo đổi sang monogram m bằng CSS. Bỏ xanh đậm, tím và vòng tròn trang trí cũ; làm nổi bật thao tác Thêm đơn bằng coral.
+
+Giữ bốn màu trạng thái và nhãn/icon: đã giao mint, chưa giao peach, đã hủy coral nhạt, chưa rõ xám ấm. Không thay mã dữ liệu, SQL, quyền hoặc nghiệp vụ. Chữ nút coral có tỷ lệ tương phản 4.76:1, chữ phụ trên nền đạt 5.53:1. Hover dùng chữ nâu đậm hơn để giữ độ tương phản. Giữ focus, chuyển động nhẹ và prefers-reduced-motion.
+
+Chạy lại tests/regression.cjs bằng Chromium + SDK thật với API giả lập: các luồng hiện có, bốn trạng thái và cả bốn trang ở 375/768/1440px đều đạt. Đã rà ảnh tổng quan/danh sách desktop và tổng quan/biểu mẫu mobile theo phương án đã chọn. Không ghi thử lên dữ liệu thật.

@@ -48,3 +48,7 @@ Danh sách có nút **Hủy đơn** với xác nhận. Hủy chỉ đổi trạn
 **Cần nâng cấp Supabase một lần:** chạy [supabase-cancel-orders.sql](supabase-cancel-orders.sql) trong SQL Editor bằng tài khoản chủ dự án. Nếu chưa chạy, giao diện báo lỗi và giữ nguyên trạng thái khi máy chủ từ chối. Tệp chỉ mở rộng ràng buộc dữ liệu, không thay đơn hay quyền. Các script schema đầy đủ cũng đã cập nhật cho cài đặt mới.
 
 Tổng số đơn vẫn gồm cả đơn hủy; **Giá trị đơn chưa hủy** chỉ cộng đơn còn hiệu lực. Khi lọc đơn hủy, danh sách vẫn hiển thị số tiền gốc từng đơn để đối chiếu, tổng giá trị còn hiệu lực bằng 0. Xuất CSV vẫn gồm mọi đơn và trạng thái thực tế, bao gồm đơn hủy.
+
+## Phong cách Peach Boutique
+
+Giao diện dùng bảng màu đã chọn: coral `#F28076`, blush `#FFB6AF`, kem `#FAE0C7`, peach `#FBC193`, mint `#4EB09B`. Nền kem hồng, panel trắng ấm, tiêu đề serif nâu và logo chữ m; nút chính coral dùng chữ nâu đậm để dễ đọc. Mint dành chủ yếu cho đơn đã giao; chưa giao màu peach, đã hủy coral nhạt, chưa rõ xám ấm. Cả bốn trang dùng chung phong cách và vẫn hỗ trợ giảm chuyển động.
