@@ -86,6 +86,7 @@ function renderPagination(totalPages){
 }
 function render(){
  window.mayChatSync?.();
+ if($('moreFilterSummary')){const active=[$('fPay')?.value,$('fDel')?.value].filter(value=>value&&value!=='all').length;$('moreFilterSummary').textContent=active?'· '+active+' đang lọc':'';}
  if(page==='order'){initEditor();return;}if(page==='account'||(page==='orders'&&!dataLoaded))return;
  const list=filteredOrders(),total=list.filter(o=>o.del!=='Đã hủy').reduce((s,o)=>s+o.price,0),delivered=orders.filter(o=>o.del==='Đã giao').length,undelivered=orders.filter(o=>o.del==='Chưa giao').length,cancelled=orders.filter(o=>o.del==='Đã hủy').length,unknown=orders.length-delivered-undelivered-cancelled;
  const stats=[['Tổng đơn hàng',orders.length,'Tất cả đơn đã lưu'],['Giá trị đơn chưa hủy',fmt(total),'Không tính các đơn đã hủy'],['Đã giao',delivered,'Đơn hoàn thành giao hàng'],['Chưa giao',undelivered,`${unknown} đơn chưa rõ trạng thái`],['Đã hủy',cancelled,'Đơn được giữ lại để đối chiếu'],['Hoa hồng đã nhận',fmtCommission(sumCommissions(orders)),'Cộng số đã nhận, kể cả đơn hủy']];
