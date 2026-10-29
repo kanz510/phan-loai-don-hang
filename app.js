@@ -13,7 +13,7 @@ function safeRoute(candidate,allowed,fallback){try{const url=new URL(candidate,l
 const listReturn=safeRoute(params.get('returnTo')||'orders.html',['orders.html'],'orders.html');
 function listRoute(){return 'orders.html'+(page==='orders'?location.search:'');}
 function loginRoute(){return 'account.html?next='+encodeURIComponent((location.pathname.split('/').pop()||'index.html')+location.search);}
-function updateListUrl(){if(page!=='orders')return;const query=new URLSearchParams();if($('q').value)query.set('q',$('q').value);if($('fPay').value!=='all')query.set('pay',$('fPay').value);if($('fDel').value!=='all')query.set('del',$('fDel').value);appendDateParams(query);if(currentPage>1)query.set('page',currentPage);history.replaceState(null,'','orders.html'+(query.size?'?'+query:''));if($('addOrder'))$('addOrder').href='order.html?returnTo='+encodeURIComponent(listRoute());}
+function updateListUrl(){if(page!=='orders')return;const query=new URLSearchParams();if($('q').value)query.set('q',$('q').value);if($('fSort').value!=='newest')query.set('sort',$('fSort').value);if($('fDel').value!=='all')query.set('del',$('fDel').value);appendDateParams(query);if(currentPage>1)query.set('page',currentPage);history.replaceState(null,'','orders.html'+(query.size?'?'+query:''));if($('addOrder'))$('addOrder').href='order.html?returnTo='+encodeURIComponent(listRoute());}
 
 const PAY=['Chưa rõ','CK','COD','Tiền mặt','Chưa thanh toán'], DEL=['Chưa rõ','Đã giao','Chưa giao','Đã hủy'];
 let orders=[],editId=null,editVersion=null,toastTimer,currentPage=1,activeUser=null,authorized=false,busy=false,authEpoch=0,refreshSeq=0,channel=null,pollTimer=null;
@@ -37,7 +37,7 @@ function matchesDate(order,f){if(f.error)return false;if(f.mode==='all'||(f.mode
 function renderDateFilter(){if(page!=='orders')return;const f=dateFilter();$('monthFields').hidden=f.mode!=='month';$('rangeFields').hidden=f.mode!=='range';$('dateFilterError').textContent=f.error;$('dateFilterError').hidden=!f.error;let text='Tất cả thời gian';if(f.mode==='month')text=f.month?`Tháng ${Number(f.month)}/${f.year}`:`Năm ${f.year}`;if(f.mode==='range')text=f.from&&f.to?`${displayDate(f.from)} – ${displayDate(f.to)}`:f.from?`Từ ${displayDate(f.from)}`:f.to?`Đến ${displayDate(f.to)}`:'Chọn khoảng ngày';$('dateFilterSummary').textContent=f.error?'Kiểm tra ngày đã chọn':text;}
 function initDateFilters(){if(page!=='orders')return;const currentYear=orderDateKey({createdAt:new Date().toISOString()}).slice(0,4);$('fYear').value=params.get('year')||currentYear;const month=Number(params.get('month'));$('fMonth').value=Number.isInteger(month)&&month>=1&&month<=12?String(month).padStart(2,'0'):'';for(const [id,key] of [['fFrom','from'],['fTo','to']])if(validDateKey(params.get(key)||''))$(id).value=params.get(key);if(['month','range'].includes(params.get('time'))){$('fDateMode').value=params.get('time');$('timeFilters').open=true;}renderDateFilter();}
 initDateFilters();
-if(page==='orders'){$('q').value=params.get('q')||'';if(PAY.includes(params.get('pay')))$('fPay').value=params.get('pay');if(DEL.includes(params.get('del')))$('fDel').value=params.get('del');const requestedPage=Number(params.get('page'));currentPage=Number.isSafeInteger(requestedPage)&&requestedPage>0?requestedPage:1;}
+if(page==='orders'){$('q').value=params.get('q')||'';if(['newest','oldest','amount-asc'].includes(params.get('sort')))$('fSort').value=params.get('sort');if(DEL.includes(params.get('del')))$('fDel').value=params.get('del');const requestedPage=Number(params.get('page'));currentPage=Number.isSafeInteger(requestedPage)&&requestedPage>0?requestedPage:1;}
 if(page==='order'){$('cancelEdit').href=listReturn;$('backToOrders').href=listReturn;}
 
 function validOrder(o){return o&&Number.isSafeInteger(o.version)&&o.version>0&&((typeof o.id==='number'&&Number.isSafeInteger(o.id))||(typeof o.id==='string'&&o.id.length>0))&&typeof o.name==='string'&&!!o.name.trim()&&typeof o.item==='string'&&!!o.item.trim()&&typeof o.price==='number'&&Number.isFinite(o.price)&&o.price>=0&&o.price<=9000000000&&Number.isSafeInteger(o.commission)&&o.commission>=0&&o.commission<=9000000000000&&PAY.includes(o.pay)&&DEL.includes(o.del)&&(o.note===undefined||typeof o.note==='string');}
@@ -79,14 +79,20 @@ function commissionInputToVnd(value){const text=String(value).trim();if(!text)re
 function commissionVndToInput(amount){const value=BigInt(amount);const whole=value/1000n;const fraction=String(value%1000n).padStart(3,'0').replace(/0+$/,'');return String(whole)+(fraction?'.'+fraction:'');}
 const sumCommissions=list=>list.reduce((sum,o)=>sum+BigInt(o.commission),0n);
 const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase().trim();
-function filteredOrders(){const q=normalize($('q')?.value||''),fp=$('fPay')?.value||'all',fd=$('fDel')?.value||'all';const f=dateFilter();return orders.filter(o=>matchesDate(o,f)&&(fp==='all'||o.pay===fp)&&(fd==='all'||o.del===fd)&&normalize(o.name+' '+o.item).includes(q));}
+function compareOrders(a,b,mode='newest'){
+ const at=Date.parse(a.createdAt),bt=Date.parse(b.createdAt);
+ const dateOrder=Number.isFinite(at)&&Number.isFinite(bt)?(mode==='oldest'?at-bt:bt-at):Number.isFinite(at)?-1:Number.isFinite(bt)?1:0;
+ const tie=String(b.id).localeCompare(String(a.id),'en',{numeric:true});
+ return (mode==='amount-asc'?a.price-b.price:0)||dateOrder||tie;
+}
+function filteredOrders(){const q=normalize($('q')?.value||''),fd=$('fDel')?.value||'all';const f=dateFilter();return orders.filter(o=>matchesDate(o,f)&&(fd==='all'||o.del===fd)&&normalize(o.name+' '+o.item).includes(q)).sort((a,b)=>compareOrders(a,b,$('fSort')?.value||'newest'));}
 function cell(row,label,text,className){const td=document.createElement('td');td.dataset.label=label;if(text!==undefined)td.textContent=text;if(className)td.className=className;row.append(td);return td;}
 function renderPagination(totalPages){
  for(const id of ['pagerTop','pagerBottom']){const nav=$(id);nav.replaceChildren();for(const [text,delta,disabled] of [['← Trước',-1,currentPage===1],['Sau →',1,currentPage===totalPages]]){const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=text;button.disabled=disabled;button.addEventListener('click',()=>{currentPage+=delta;render();document.querySelector('.order-list').scrollIntoView({block:'start'});const buttons=$('pagerTop').querySelectorAll('button');const target=buttons[delta===1?1:0];(target.disabled?buttons[delta===1?0:1]:target).focus({preventScroll:true});});if(delta===1){const status=document.createElement('span');status.textContent=`Trang ${currentPage} / ${totalPages}`;status.setAttribute('aria-live','polite');nav.append(status);}nav.append(button);}}
 }
 function render(){
  window.mayChatSync?.();
- if($('moreFilterSummary')){const active=[$('fPay')?.value,$('fDel')?.value].filter(value=>value&&value!=='all').length;$('moreFilterSummary').textContent=active?'· '+active+' đang lọc':'';}
+ if($('moreFilterSummary')){const active=[$('fDel')?.value].filter(value=>value&&value!=='all').length;$('moreFilterSummary').textContent=active?'· '+active+' đang lọc':'';}
  if(page==='order'){initEditor();return;}if(page==='account'||(page==='orders'&&!dataLoaded))return;
  const list=filteredOrders(),total=list.filter(o=>o.del!=='Đã hủy').reduce((s,o)=>s+o.price,0),delivered=orders.filter(o=>o.del==='Đã giao').length,undelivered=orders.filter(o=>o.del==='Chưa giao').length,cancelled=orders.filter(o=>o.del==='Đã hủy').length,unknown=orders.length-delivered-undelivered-cancelled;
  const stats=[['Tổng đơn hàng',orders.length,'Tất cả đơn đã lưu'],['Giá trị đơn chưa hủy',fmt(total),'Không tính các đơn đã hủy'],['Đã giao',delivered,'Đơn hoàn thành giao hàng'],['Chưa giao',undelivered,`${unknown} đơn chưa rõ trạng thái`],['Đã hủy',cancelled,'Đơn được giữ lại để đối chiếu'],['Hoa hồng đã nhận',fmtCommission(sumCommissions(orders)),'Cộng số đã nhận, kể cả đơn hủy']];
@@ -148,8 +154,8 @@ function exportCSV(){const rows=[['Tên khách','Hàng mua','Phương thức tha
 function filterChanged(){currentPage=1;render();}
 for(const id of ['fDateMode','fMonth','fYear','fFrom','fTo'])bind(id,'change',filterChanged);
 for(const chip of document.querySelectorAll('[data-delivery-filter]'))chip.addEventListener('click',()=>{$('fDel').value=chip.dataset.deliveryFilter;filterChanged();});
-bind('q','input',filterChanged);for(const id of ['fPay','fDel'])bind(id,'change',filterChanged);
-bind('clearFilters','click',()=>{$('q').value='';$('fPay').value='all';$('fDel').value='all';$('fDateMode').value='all';$('fMonth').value='';$('fFrom').value='';$('fTo').value='';filterChanged();});
+bind('q','input',filterChanged);for(const id of ['fSort','fDel'])bind(id,'change',filterChanged);
+bind('clearFilters','click',()=>{$('q').value='';$('fSort').value='newest';$('fDel').value='all';$('fDateMode').value='all';$('fMonth').value='';$('fFrom').value='';$('fTo').value='';filterChanged();});
 bind('orderForm','submit',saveOrder);bind('exportButton','click',exportCSV);for(const id of ['fName','fItem'])bind(id,'input',()=>$(id).setCustomValidity(''));
 bind('loginForm','submit',async event=>{event.preventDefault();if(!cloud)return;$('loginButton').disabled=true;setText('authStatus','Đang đăng nhập…');try{const login=$('email').value.trim();if(!login)throw new Error('Vui lòng nhập tên đăng nhập.');const email=login.includes('@')?login:login+'@admin.com';const {error}=await cloud.client.auth.signInWithPassword({email,password:$('password').value});if(error)throw error;$('password').value='';}catch(error){setText('authStatus','Đăng nhập không thành công. '+errorText(error));}finally{$('loginButton').disabled=false;}});
 bind('logoutButton','click',async()=>{if(busy)return;const {error}=await cloud.client.auth.signOut({scope:'local'});if(error){notify(errorText(error));return;}editorDirty=false;applySession(null);});
