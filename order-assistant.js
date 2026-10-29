@@ -35,7 +35,9 @@
   const p=mascotPosition||{x:innerWidth-r.width-20,y:innerHeight-r.height-20};
   mascotPosition={x:clamp(p.x,gap,innerWidth-r.width-gap),y:clamp(p.y,gap,innerHeight-r.height-gap)};
   host.style.left=mascotPosition.x+'px';host.style.top=mascotPosition.y+'px';host.style.right='auto';host.style.bottom='auto';
-  host.classList.toggle('em-kem-near-left',mascotPosition.x<180);placePanel();
+  const leftSpace=mascotPosition.x-gap,rightSpace=innerWidth-mascotPosition.x-r.width-gap;
+  host.classList.toggle('em-kem-near-left',rightSpace>leftSpace);
+  host.querySelector('.em-kem-bubble').style.maxWidth=Math.max(72,Math.max(leftSpace,rightSpace)-10)+'px';placePanel();
  }
  function saveMascot(){try{localStorage.setItem(positionKey,JSON.stringify(mascotPosition));}catch{}}
  launcher.addEventListener('pointerdown',event=>{

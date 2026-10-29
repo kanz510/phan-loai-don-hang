@@ -128,3 +128,5 @@ body[data-busy=true] #saveButton::after{border-color:#512a2440;border-top-color:
 .em-kem-near-left .em-kem-bubble::after{right:auto;left:-7px;border-right:0;border-top:0;border-left:1px solid #e5c6aa;border-bottom:1px solid #e5c6aa}
 .may-chat-panel{position:fixed;right:auto;bottom:auto}
 @media(max-width:600px){.em-kem-near-left .em-kem-bubble{left:80px}}
+
+.em-kem-bubble{white-space:normal;width:max-content;text-align:center}
