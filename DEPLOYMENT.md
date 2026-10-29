@@ -70,3 +70,7 @@ Khóa `phan-loai-don-hang-v2` không bị đọc, sửa hoặc xóa trong bản 
 ## Giới hạn kiểm thử
 
 Kiểm thử browser dùng SDK Supabase thật kèm Auth/PostgREST giả lập, không gửi yêu cầu ghi tới dự án thật. Kiểm thử RLS chạy trên PostgreSQL qua PGlite, không thay thế xác minh Auth/Realtime thật. Chưa kiểm thử Safari/iOS. Trong phiên triển khai này chỉ kiểm tra GET ẩn danh không chứa nội dung đơn (thấy 31 bản ghi); chưa có quyền quản trị Supabase để chạy migration, tạo người dùng hoặc xác minh đăng nhập thật.
+
+## Bật chat AI (tùy chọn)
+
+Làm theo [AI-SETUP.md](AI-SETUP.md). Cần chạy `supabase-ai-chat.sql`, đặt `OPENAI_API_KEY` trong Supabase Secrets và deploy Edge Function `order-chat`. Đẩy GitHub Pages hoặc kết nối GitHub với Supabase không tự triển khai hàm hoặc thêm khóa. Frontend giữ Tra cứu nhanh hoạt động khi chưa có AI. Không đưa khóa OpenAI vào mã web hoặc GitHub.

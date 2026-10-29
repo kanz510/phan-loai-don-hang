@@ -1,0 +1,4 @@
+# JWT is verified explicitly with Supabase Auth /user in the handler, followed
+# by membership and RLS checks. Supports current and legacy public API keys.
+[functions.order-chat]
+verify_jwt = false
