@@ -66,7 +66,7 @@ alter table public.orders add constraint orders_input_valid check (
  and amount_k >= 0 and amount_k <= 9000000000 and amount_k <> 'NaN'::numeric
  and amount_k=round(amount_k,3)
  and payment_method in ('Chưa rõ','CK','COD','Tiền mặt','Chưa thanh toán')
- and delivery_status in ('Chưa rõ','Đã giao','Chưa giao')
+ and delivery_status in ('Chưa rõ','Đã giao','Chưa giao','Đã hủy')
  and length(coalesce(note,'')) <= 2000
 ) not valid;
 create index if not exists orders_created_at_idx on public.orders(created_at desc);

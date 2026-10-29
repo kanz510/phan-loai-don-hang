@@ -46,3 +46,12 @@ Trang `index.html` chỉ giữ thống kê và ba thao tác nhanh. Danh sách �
 Thay stylesheet cũ bằng bộ giao diện thống nhất: nền sáng có điểm màu, thẻ thống kê teal/tím/xanh/cam, khoảng cách rõ ràng, nút gradient và biểu tượng SVG nội bộ. Mỗi dòng đơn gắn `data-delivery` để nền xanh lá (đã giao), vàng cam (chưa giao), xanh xám (chưa rõ) cùng viền nhận diện, biểu tượng và nhãn chữ. Trên mobile màu được áp dụng cho toàn bộ thẻ đơn. Hover giữ nguyên nhóm màu trạng thái. Bổ sung bộ lọc trạng thái nhanh có số đơn, đồng bộ với select và URL hiện có.
 
 Animation giới hạn ở mở trang, thao tác nhanh, hover/nhấn nút và chỉ báo đang lưu; không tạo hiệu ứng lặp cho dòng đơn khi polling. `prefers-reduced-motion` tắt các animation và transition. Đã mở rộng kiểm thử browser để xác nhận ba nền khác nhau, bộ lọc nhanh, giảm chuyển động và giữ các luồng CRUD/auth/CSV/điều hướng. Kiểm tra responsive cả bốn trang ở 375/768/1440px bằng dữ liệu mô phỏng có cả ba trạng thái.
+
+
+## Tên May và tác vụ hủy đơn
+
+Đổi tên hiển thị và title của cả bốn trang thành **Quản lý đơn hàng của May 🫶🏻**. Thêm `Đã hủy` vào lựa chọn trạng thái, bộ lọc nhanh, URL, bảng/thẻ nền hồng, dashboard và thao tác nhanh. Tác vụ hủy có xác nhận, giữ nguyên bản ghi và thông tin tiền/thanh toán/ghi chú, ghi qua API cập nhật có kiểm tra version. Không hủy lặp và không tự hoàn tiền. Giá trị còn hiệu lực loại đơn hủy khỏi tổng, số đơn hủy được tính riêng và không bị cộng nhầm vào “Chưa rõ”. CSV giữ đủ các đơn.
+
+Script nâng cấp riêng `supabase-cancel-orders.sql` thay duy nhất ràng buộc nhập liệu trong transaction và có thể chạy lại. Các script schema đầy đủ cũng chấp nhận trạng thái mới. Chưa có quyền quản trị Supabase trong phiên này nên chưa áp dụng script vào hệ thống thật. Frontend tương thích ba trạng thái cũ và báo lỗi nếu hủy bị ràng buộc máy chủ từ chối.
+
+Kiểm thử browser đạt: hủy thành công/không xác nhận/server chưa hỗ trợ/xung đột phiên bản; bản ghi, số tiền và thanh toán được giữ; không hiện nút hủy lần hai; bộ lọc hủy giữ sau reload; bốn màu nền khác nhau; tên May ở title/header mọi trang; các luồng cũ và responsive 375/768/1440px. SQL/PGlite đạt: constraint cũ từ chối trạng thái mới; nâng cấp hủy chạy hai lần không đổi bản ghi; thành viên hủy được, tăng version, giữ tiền/thanh toán và từ chối cập nhật với version cũ. Các kiểm thử không ghi vào dự án Supabase thật.
