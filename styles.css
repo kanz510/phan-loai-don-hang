@@ -181,3 +181,11 @@ body[data-page=orders] .actions .deliver-order .icon{width:16px;height:16px}
  body[data-page=orders] tr[data-delivery=pending] .customer{min-width:0}
  body[data-page=orders] .actions{gap:8px}
 }
+
+/* Share label, input and hint rows so the two amount inputs stay aligned. */
+.money-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 21px}
+.money-fields>.field{display:grid;grid-template-rows:subgrid;grid-row:span 3;gap:8px}
+.money-fields label{line-height:1.4;align-self:end}
+.money-fields input{align-self:start}
+@supports not (grid-template-rows:subgrid){.money-fields>.field{display:flex;flex-direction:column}.money-fields label{min-height:2.8em}}
+@media(max-width:540px){.money-fields{column-gap:18px}}
