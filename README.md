@@ -70,3 +70,11 @@ Mục **Lọc theo thời gian** ở danh sách dùng ngày tạo đơn theo **A
 
 
 Đổi cách nhập hoa hồng không đổi dữ liệu đã lưu: nội bộ và CSV vẫn dùng đồng nguyên. Khi mở sửa, khoản đã lưu 50.000đ tự hiển thị `50`; lưu lại không làm số tiền tăng 1.000 lần. Không cần chạy thêm SQL cho thay đổi đơn vị nhập này.
+
+## Trợ lý tra cứu cơ bản
+
+Nút **Hỏi May** ở góc phải các trang tổng quan, danh sách và biểu mẫu, chỉ hiện khi tài khoản có quyền truy cập. `order-assistant.js` đọc danh sách đã đồng bộ trong bộ nhớ; không gọi dịch vụ AI, không sửa đơn, không lưu cuộc chat hay gửi nội dung chat ra ngoài. Đăng xuất/đổi tài khoản sẽ xóa cuộc chat. Trang tài khoản không hiển thị trợ lý.
+
+Ví dụ: `Tìm đơn của Lan`, `Tìm son Dior`, `Đơn chưa giao`, `Đơn đã hủy tháng 10/2026`, `Hoa hồng tháng này`, `Tổng quan hôm nay`, `Tổng quan ngày 29/10/2026`, `Tổng quan năm 2026`. Có thể dùng không dấu; hỗ trợ hôm qua, tháng trước, năm trước. Tháng không ghi năm dùng năm hiện tại tại Việt Nam. Khoảng ngày, tuần/quý hoặc lọc thanh toán cần dùng trang Đơn hàng. Tìm kiếm tên/sản phẩm là một câu hỏi riêng.
+
+Bot dùng tất cả đơn được tải theo quyền thành viên, không dùng bộ lọc/phân trang đang mở; liên kết kết quả dẫn tới danh sách có bộ lọc tương ứng. Thời gian theo **ngày tạo đơn tại Việt Nam**, hoa hồng là tiền thực nhận (kể cả đơn hủy), giá trị đơn loại trừ đơn hủy. Nếu chưa tải xong hoặc đang báo lỗi đồng bộ, bot yêu cầu cập nhật thay vì trả số cũ. Không cần SQL hoặc khóa API mới.
