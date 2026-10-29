@@ -74,7 +74,7 @@ assert.ok(!JSON.stringify(retryLogs).includes('private upstream details'));
 attempts=0;const aborted=new AbortController();aborted.abort();
 await assert.rejects(()=>requestXKiro('test',{signal:aborted.signal},{fetchImpl:async()=>{attempts++;throw new DOMException('Aborted','AbortError');},sleep:async()=>{},log:()=>{throw Error('must not retry aborted request');}}));assert.equal(attempts,1);
 const beforeRetryQuota=quotaCalls,beforeRetryModels=models,beforeRetryReads=dbReads;
-modelFails=502;response=await handler(req());assert.equal(response.status,502);assert.equal(models-beforeRetryModels,3);assert.equal(quotaCalls-beforeRetryQuota,1);assert.equal(dbReads,beforeRetryReads);modelFails=0;
+modelFails=502;response=await handler(req());assert.equal(response.status,502);assert.equal(models-beforeRetryModels,2);assert.equal(quotaCalls-beforeRetryQuota,1);assert.equal(dbReads,beforeRetryReads);modelFails=0;
 console.log('PASS provider retries: transient recovery, 3-attempt cap, no retry for auth/schema/model errors, Retry-After, network recovery, abort, safe logs, quota charged once.');
 
 const fastClock=new Date('2026-10-29T00:00:00Z');
@@ -87,3 +87,30 @@ response=await handler(req('POST',{messages:[{role:'user',content:'Tháng này c
 assert.equal(response.status,200);const fastReply=await response.json();assert.equal(fastReply.mode,'direct');assert.equal(fastReply.sources[0].count,1);assert.equal(fastReply.sources[0].active_order_value_vnd,'125501');assert.ok(fastReply.reply.includes('125.501đ'));
 assert.equal(models,beforeFastModels);assert.equal(quotaCalls,beforeFastQuota+1);assert.equal(dbReads,beforeFastReads+1);
 console.log('PASS direct statistics: zero provider calls, fresh RLS data, one quota charge, Vietnam periods, year boundary and complex-question fallback.');
+
+const providerEnv={SUPABASE_URL:'https://db.test',SUPABASE_ANON_KEY:'public-key',GROQ_API_KEY:'groq-private-test',XKIRO_API_KEY:'private-test-key'};
+const routeLogs=[],routeCalls=[];let groqStatus=200,groqNetwork=false;
+const routeFetch=async(url,options)=>{
+ if(url==='https://api.groq.com/openai/v1/chat/completions'){
+  routeCalls.push('groq');assert.equal(options.headers.Authorization,'Bearer groq-private-test');
+  const body=JSON.parse(options.body);assert.equal(body.model,'openai/gpt-oss-120b');assert.equal(body.reasoning_effort,'low');
+  if(groqNetwork)throw new TypeError('private failure');
+  if(groqStatus!==200)return new Response('{}',{status:groqStatus});
+  return fetchImpl('https://api.xkiro.com/v1/chat/completions',{...options,headers:{...options.headers,Authorization:'Bearer private-test-key'}});
+ }
+ if(url==='https://api.xkiro.com/v1/chat/completions')routeCalls.push('xkiro');
+ return fetchImpl(url,options);
+};
+large=false;filters={...defaults,from:'2026-10-01',to:'2026-10-31'};
+const primaryHandler=createHandler({env:n=>providerEnv[n],fetchImpl:routeFetch,sleep:async()=>{},log:e=>routeLogs.push(e),now:()=>new Date('2026-10-29T00:00:00Z')});
+routeCalls.length=0;let q0=quotaCalls;response=await primaryHandler(req());assert.equal(response.status,200);assert.deepEqual(routeCalls,['groq','groq']);assert.equal(quotaCalls,q0+1);
+for(const status of [429,502,503,504]){
+ groqStatus=status;routeCalls.length=0;q0=quotaCalls;response=await primaryHandler(req());assert.equal(response.status,200);assert.deepEqual(routeCalls,['groq','xkiro','xkiro']);assert.equal(quotaCalls,q0+1);
+}
+for(const status of [400,401,403,404,422]){
+ groqStatus=status;routeCalls.length=0;response=await primaryHandler(req());assert.notEqual(response.status,200);assert.deepEqual(routeCalls,['groq']);
+}
+groqStatus=200;groqNetwork=true;routeCalls.length=0;response=await primaryHandler(req());assert.equal(response.status,200);assert.deepEqual(routeCalls,['groq','xkiro','xkiro']);groqNetwork=false;
+routeCalls.length=0;response=await primaryHandler(req('POST',{messages:[{role:'user',content:'Tháng này có bao nhiêu đơn chưa giao và tổng tiền là bao nhiêu?'}]}));assert.equal(response.status,200);assert.deepEqual(routeCalls,[]);
+assert.ok(routeLogs.some(e=>e.event==='order_chat_provider_fallback'));assert.ok(!JSON.stringify(routeLogs).includes('groq-private-test'));assert.ok(!JSON.stringify(routeLogs).includes('private failure'));
+console.log('PASS Groq primary, sticky xKiro fallback for transient errors/network, no fallback for config errors, direct path, safe logs and single quota charge.');
