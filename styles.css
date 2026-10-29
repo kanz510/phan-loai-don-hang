@@ -143,3 +143,6 @@ body[data-busy=true] #saveButton::after{border-color:#512a2440;border-top-color:
 .em-kem-poodle{transition:none}
 
 .may-chat-launch[aria-expanded="true"]~.em-kem-care{display:none}
+
+/* Quick delivery action shares the existing order permissions. */
+.actions{flex-wrap:wrap}.actions .deliver-order{background:#dceddf;color:#315f4d;border:1px solid #b6d4c1;box-shadow:none}.actions .deliver-order:hover{background:#c9e3d1}.actions .deliver-order:disabled{opacity:.6;cursor:wait}
