@@ -100,3 +100,17 @@ body[data-busy=true] #saveButton::after{border-color:#512a2440;border-top-color:
 .may-chat-mode{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid #efd7c8;flex-shrink:0}.may-chat-mode label{white-space:nowrap}.may-chat-mode select{min-height:35px;padding:6px 9px;font-size:12px}.may-chat-note,.may-chat-suggestions,.may-chat-form{flex-shrink:0}.may-chat-message.source{background:#edf5f1;border-color:#d5e8de;font-size:11px}.may-chat-wait{margin:0;color:#765448;font-size:12px;line-height:1.5}.may-chat-panel{height:640px}.may-chat-messages{display:block}.may-chat-message{width:fit-content;margin:0 0 12px}.may-chat-message.user{margin-left:auto}
 
 @media(max-height:560px){.may-chat-suggestions{display:none}.may-chat-note{max-height:58px;overflow-y:auto}.may-chat-head{padding:9px 12px}.may-chat-messages{min-height:0}}
+
+/* Em Kem: illustrated Poodle launcher. */
+.may-chat-launch{position:relative;display:flex;align-items:flex-end;justify-content:flex-end;width:100px;height:108px;min-height:0;padding:0;border:0;border-radius:24px;background:transparent;box-shadow:none;overflow:visible;isolation:isolate;-webkit-tap-highlight-color:transparent}
+.may-chat-launch:hover,.may-chat-launch:active{background:transparent;box-shadow:none}
+.em-kem-poodle{display:block;width:96px;height:100px;object-fit:contain;transform-origin:50% 92%;filter:drop-shadow(0 5px 5px #58321e30);animation:em-kem-hello 4.5s ease-in-out infinite;pointer-events:none}
+.em-kem-bubble{position:absolute;right:98px;bottom:62px;white-space:nowrap;padding:11px 15px;background:#fffaf4;color:#68402c;border:1px solid #e5c6aa;border-radius:18px 18px 4px 18px;box-shadow:0 5px 18px #68402c18;font-size:13px;font-weight:600;line-height:1.4;transform-origin:100% 100%;animation:em-kem-bubble 4.5s ease-in-out infinite;pointer-events:none}
+.em-kem-bubble::after{content:"";position:absolute;right:-7px;bottom:8px;width:12px;height:12px;background:#fffaf4;border-right:1px solid #e5c6aa;border-top:1px solid #e5c6aa;transform:rotate(45deg)}
+.may-chat-launch[aria-expanded="true"] .em-kem-bubble{display:none}
+.may-chat-launch[aria-expanded="true"] .em-kem-poodle,.may-chat-launch:hover .em-kem-poodle{animation-play-state:paused}
+.may-chat-panel{bottom:120px;max-height:calc(100dvh - 155px)}
+@keyframes em-kem-hello{0%,55%,100%{transform:translateY(0) rotate(0)}62%,78%{transform:translateY(-5px) rotate(-4deg)}70%,86%{transform:translateY(-2px) rotate(4deg)}}
+@keyframes em-kem-bubble{0%,55%,100%{transform:translateY(0)}68%,82%{transform:translateY(-3px)}}
+@media(max-width:600px){.may-chat-launch{width:80px;height:88px;min-height:0;padding:0}.em-kem-poodle{width:78px;height:82px}.em-kem-bubble{right:80px;bottom:48px;font-size:12px;padding:9px 12px}.may-chat-panel{bottom:100px;max-height:calc(100dvh - 130px)}}
+@media(prefers-reduced-motion:reduce){.em-kem-poodle,.em-kem-bubble{animation:none}}
