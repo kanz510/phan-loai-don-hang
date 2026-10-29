@@ -74,3 +74,8 @@ Kiểm thử browser dùng SDK Supabase thật kèm Auth/PostgREST giả lập, 
 ## Bật chat AI (tùy chọn)
 
 Làm theo [AI-SETUP.md](AI-SETUP.md). Cần chạy `supabase-ai-chat.sql`, đặt `OPENAI_API_KEY` trong Supabase Secrets và deploy Edge Function `order-chat`. Đẩy GitHub Pages hoặc kết nối GitHub với Supabase không tự triển khai hàm hoặc thêm khóa. Frontend giữ Tra cứu nhanh hoạt động khi chưa có AI. Không đưa khóa OpenAI vào mã web hoặc GitHub.
+
+
+## Frontend release / Home Screen updates
+
+Every frontend release must change the `app-version` meta tag in all four HTML entry points and use that same version in their local JS/CSS URLs (including `app-update.js`). Commit these changes atomically with the assets. The updater checks the deployed HTML with `cache: no-store` on launch/resume and reloads to a versioned page URL when safe. Active order/login inputs or a chat request postpone automatic reload; a visible update button remains available. It does not clear Supabase auth or Em Kem history. A copy already suspended on an older build without the updater needs one manual reload to bootstrap this feature.
