@@ -75,3 +75,10 @@ Thêm tháng/năm (tháng trống là cả năm) và khoảng ngày riêng biệ
 `supabase-commission.sql` nâng cấp hẹp: thêm cột mặc định 0, check độc lập và quyền ghi cột, không đụng RLS/member/trigger hoặc dữ liệu khác. Script schema đầy đủ cập nhật tương đương. Frontend thử cột mới, chỉ fallback nếu đúng lỗi thiếu commission_amount; vẫn đọc/lưu hoa hồng 0 với schema cũ nhưng không âm thầm bỏ khoản khác 0. Sau nâng cấp, refresh thử lại cột. Phiên triển khai này chưa có quyền quản trị Supabase nên chưa tự chạy SQL trên dự án thật.
 
 Kiểm thử SQL/PGlite đạt: schema cũ thiếu cột, chạy nâng cấp hai lần bảo toàn dữ liệu, default 0, số tối đa, từ chối âm/thập phân/NaN/Infinity/quá giới hạn, chỉ thành viên được ghi, không tự sửa version/thành viên, version tăng/xung đột, hủy giữ hoa hồng và migration hủy không bỏ check hoa hồng. Kiểm thử Chromium với SDK thật và API giả lập đạt các luồng hoa hồng, fallback schema, múi giờ qua UTC17, biên cuối tháng, năm nhuận, lọc cả năm/khoảng mở/khoảng đảo, kết hợp trạng thái và URL. Không ghi lên Supabase thật.
+
+
+## Rút gọn đơn vị nhập hoa hồng
+
+Đổi riêng ô nhập hoa hồng sang nghìn đồng theo yêu cầu: 50 = 50.000đ, 12.5 = 12.500đ, bước 0.001 nghìn = 1đ. Dùng chuyển đổi thập phân qua BigInt để tránh sai số kiểu 1.001 × 1000; đọc sửa chia ngược đúng bằng phép toán số nguyên. Cơ sở dữ liệu, API, tổng và CSV vẫn là đồng nguyên; không cần SQL mới hay chuyển dữ liệu. Bump URL app.js trên mọi trang để tải đúng cách nhập.
+
+Kiểm thử Chromium + API giả lập đạt toàn bộ: 50 → 50.000đ, 12.5 → 12.500đ, 1.001 → 1.001đ; mở khoản cũ 20.000đ hiện20 rồi lưu lại vẫn20.000đ; sửa/lưu không thay 1.001đ; kiểm tra biên tối đa, số âm và dưới1đ; tổng/CSV vẫn đồng nguyên. Các luồng hủy đơn, lọc ngày, schema cũ và responsive tiếp tục đạt. Không ghi thử lên dữ liệu thật.
