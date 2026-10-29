@@ -8,7 +8,7 @@ const row=(id,overrides={})=>({id,customer_name:'Ngọc Quỳnh',item:'Son Dior'
 const rows=[row(1),row(2,{delivery_status:'Đã hủy',commission_amount:'1001'}),row(3,{created_at:'2026-09-30T16:59:59Z',delivery_status:'Đã giao',payment_method:'CK',commission_amount:'9000000000000'})];
 assert.equal(dateKey(rows[0].created_at),'2026-10-01');assert.equal(dateKey(rows[2].created_at),'2026-09-30');
 let result=queryOrders(rows,{...defaults,from:'2026-10-01',to:'2026-10-31'});assert.equal(result.count,2);assert.equal(result.active_order_value_vnd,'125501');assert.equal(result.received_commission_vnd,'51001');
-assert.equal(queryOrders(rows,{...defaults,customer:'ngoc quynh',delivery:['Chưa giao'],payment:['Chưa thanh toán']}).count,1);
+assert.equal(queryOrders(rows,{...defaults,customer:'ngoc quynh',delivery:['Chưa giao'],payment:['Chưa thanh toán']}).count,1);assert.equal(queryOrders(rows,{...defaults,customer:'ngoc quynh',delivery:'Chưa giao',payment:'Chưa thanh toán'}).count,1);
 assert.equal(queryOrders(rows,{...defaults,customer:'Missing'}).count,0);
 assert.equal(queryOrders(Array.from({length:1001},(_,i)=>row(i,{commission_amount:'9000000000000'})),defaults).received_commission_vnd,'9009000000000000');
 result=queryOrders(rows,{...defaults,include_details:true,group_by:'status'});assert.equal(result.groups.length,3);assert.equal(result.orders[0].note,undefined);assert.equal(queryOrders(rows,{...defaults,include_details:true,include_notes:true}).orders[0].note,rows[0].note);
