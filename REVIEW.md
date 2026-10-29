@@ -82,3 +82,12 @@ Kiểm thử SQL/PGlite đạt: schema cũ thiếu cột, chạy nâng cấp hai
 Đổi riêng ô nhập hoa hồng sang nghìn đồng theo yêu cầu: 50 = 50.000đ, 12.5 = 12.500đ, bước 0.001 nghìn = 1đ. Dùng chuyển đổi thập phân qua BigInt để tránh sai số kiểu 1.001 × 1000; đọc sửa chia ngược đúng bằng phép toán số nguyên. Cơ sở dữ liệu, API, tổng và CSV vẫn là đồng nguyên; không cần SQL mới hay chuyển dữ liệu. Bump URL app.js trên mọi trang để tải đúng cách nhập.
 
 Kiểm thử Chromium + API giả lập đạt toàn bộ: 50 → 50.000đ, 12.5 → 12.500đ, 1.001 → 1.001đ; mở khoản cũ 20.000đ hiện20 rồi lưu lại vẫn20.000đ; sửa/lưu không thay 1.001đ; kiểm tra biên tối đa, số âm và dưới1đ; tổng/CSV vẫn đồng nguyên. Các luồng hủy đơn, lọc ngày, schema cũ và responsive tiếp tục đạt. Không ghi thử lên dữ liệu thật.
+
+## Chat AI tùy chọn
+
+- Thêm Edge Function `order-chat`, gọi OpenAI Chat Completions qua khóa máy chủ. Không có khóa AI trong frontend. Trình duyệt gửi tối đa 8 tin nhắn trước và câu hỏi, không gửi toàn bộ mảng đơn.
+- Hàm xác minh JWT qua Auth `/user`, kiểm tra membership, đọc đơn qua RLS với chính JWT người dùng. Chỉ có tool `query_orders` với schema bộ lọc cố định, không nhận SQL hoặc công cụ ghi. Tiền cộng bằng BigInt, ngày tạo theo Việt Nam; trả số liệu đối chiếu riêng với văn bản AI.
+- SQL `supabase-ai-chat.sql` là migration hẹp, chỉ thêm bộ đếm và RPC; không thay đổi bảng đơn. Atomic lock bảo vệ giới hạn 30 câu/tài khoản/ngày, 300/cửa hàng/ngày và cách 3 giây. Không có grant trực tiếp để client xóa/reset bộ đếm.
+- `tests/ai-chat.mjs` kiểm tra dữ liệu, Auth/membership/RLS, hội thoại, nhiều truy vấn so sánh, hạn mức, dữ liệu thiếu/lỗi và từ chối thống kê >10.000 đơn; `tests/ai-quota.cjs` kiểm tra PostgreSQL thật/PGlite cho quyền và mức sử dụng. Browser regression kiểm tra mode/readiness/JWT/context/pending/error/XSS/source links và đăng xuất khi đang chờ phản hồi.
+- Khi kiểm thử dùng API AI/Auth/REST giả lập, không gọi AI trả phí hoặc ghi dữ liệu live. Triển khai GitHub Pages **không** triển khai Edge Function, chạy SQL hay cấu hình khóa. Chưa thể xác minh kết nối OpenAI thật khi chủ dự án chưa làm [AI-SETUP.md](AI-SETUP.md). Tra cứu nhanh vẫn là mặc định khi endpoint chưa sẵn sàng.
+- Sửa xử lý session null lặp để callback đăng xuất và thao tác đăng xuất không tạo hai lượt chuyển trang, đồng thời xóa/abort cuộc chat khi kết thúc phiên.

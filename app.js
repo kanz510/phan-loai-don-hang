@@ -53,7 +53,7 @@ async function refreshOrders({silent=false}={}){
 }
 function stopSync(){clearInterval(pollTimer);pollTimer=null;if(channel){cloud.client.removeChannel(channel);channel=null;}}
 async function applySession(session){
- const user=session?.user||null;if(user&&authorized&&activeUser?.id===user.id)return;
+ const user=session?.user||null;if(!user&&!activeUser&&authEpoch>0)return;if(user&&authorized&&activeUser?.id===user.id)return;
  const epoch=++authEpoch;stopSync();authorized=false;activeUser=user;orders=[];dataLoaded=false;editorReady=false;editId=null;editVersion=null;if($('rows'))$('rows').replaceChildren();render();
  if($('sharedApp'))$('sharedApp').hidden=true;if($('accessPanel'))$('accessPanel').hidden=false;
  $('logoutButton').hidden=!user;setText('accountEmail',user?.email||'');
