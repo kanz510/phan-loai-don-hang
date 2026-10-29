@@ -159,9 +159,9 @@ body[data-busy=true] #saveButton::after{border-color:#512a2440;border-top-color:
 body[data-page=orders] .status-filters{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;padding:10px 14px;gap:7px}
 body[data-page=orders] .status-filter{flex-shrink:0;white-space:nowrap;min-height:36px;padding:7px 10px;font-size:11px}
 body[data-page=orders] .status-filter .icon{width:13px;height:13px}
-body[data-page=orders] .actions .deliver-order{min-height:46px;padding:11px 17px;font-size:14px;font-weight:800;color:white;background:#23785e;border:1px solid #1a604a;box-shadow:0 4px 10px #23785e30}
-body[data-page=orders] .actions .deliver-order .icon{width:18px;height:18px}
-@media(hover:hover){body[data-page=orders] .actions .deliver-order:hover:not(:disabled){background:#195f49;border-color:#14513e;color:#fff}}
+body[data-page=orders] .actions .deliver-order{min-height:40px;padding:9px 13px;font-size:13px;font-weight:750;color:#245c41;background:#d5edda;border:1px solid #add4b7;box-shadow:0 2px 6px #315f4d15}
+body[data-page=orders] .actions .deliver-order .icon{width:16px;height:16px}
+@media(hover:hover){body[data-page=orders] .actions .deliver-order:hover:not(:disabled){background:#c4e5cc;border-color:#91bf9e;color:#245c41}}
 @media(max-width:540px){
  body[data-page=orders] .list-tools{position:static}
  body[data-page=orders] .list-tools .panel-head{padding:10px 12px;gap:8px}
@@ -176,8 +176,8 @@ body[data-page=orders] .actions .deliver-order .icon{width:18px;height:18px}
  body[data-page=orders] .status-filters{padding:8px 12px}
  body[data-page=orders] .status-filter{min-height:34px;padding:6px 9px;font-size:11px}
  body[data-page=orders] tbody tr{position:relative}
- body[data-page=orders] tr[data-delivery=pending] td:first-child{padding-right:124px;min-height:52px}
- body[data-page=orders] .actions .deliver-order{position:absolute;top:13px;right:12px;width:116px;min-height:46px;padding:11px 12px;font-size:14px;border-radius:12px}
+ body[data-page=orders] tr[data-delivery=pending] td:first-child{padding-right:112px;min-height:46px}
+ body[data-page=orders] .actions .deliver-order{position:absolute;top:13px;right:12px;width:104px;min-height:40px;padding:9px 10px;font-size:13px;border-radius:11px}
  body[data-page=orders] tr[data-delivery=pending] .customer{min-width:0}
  body[data-page=orders] .actions{gap:8px}
 }
