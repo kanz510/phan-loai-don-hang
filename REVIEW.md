@@ -32,3 +32,10 @@ Chạy SQL, tạo tài khoản và cấp thành viên theo [DEPLOYMENT.md](DEPLO
 - Phân trang/lọc/tổng tiền phía server khi dữ liệu lớn. Hiện phân trang UI nhưng vẫn tải toàn bộ dữ liệu vào bộ nhớ; nhiều lô đọc không phải một snapshot transaction.
 - Idempotency cho thao tác thêm để xử lý mạng mất phản hồi sau khi server đã tạo đơn; hiện khóa gửi lặp chỉ bảo vệ lúc yêu cầu đang chờ, cần tải lại kiểm tra trước khi thử lại khi lỗi mạng.
 - Tách phương thức thanh toán và trạng thái thanh toán theo quy tắc nghiệp vụ đã xác nhận.
+
+
+## Tách các phần thành trang riêng
+
+Trang `index.html` chỉ giữ thống kê và ba thao tác nhanh. Danh sách ở `orders.html`, thêm/sửa ở `order.html`, đăng nhập/tài khoản ở `account.html`. Dùng chung `styles.css`, `app.js`, phiên Supabase và thanh điều hướng. Không thay schema, quyền hoặc dữ liệu máy chủ.
+
+Đã cập nhật kiểm thử Chromium + SDK/Auth/PostgREST giả lập và chạy đạt: điều hướng giữa bốn trang, yêu cầu đăng nhập rồi quay về trang đích, đường dẫn dưới `/shop/` như GitHub Pages, giữ bộ lọc/trang sau reload/hủy/lưu, mở sửa bằng ID, ID không tồn tại không được lưu thành đơn mới, chặn URL quay lại ra ngoài website, xung đột sửa và lỗi lưu giữ nội dung. Các kiểm thử dữ liệu chung, CSV, XSS, 1.001 đơn, bảng rỗng và localStorage cũ tiếp tục đạt. Cả bốn trang không tràn ngang ở 375/768/1440px; đã xem ảnh tổng quan desktop/mobile và trang biểu mẫu mobile. Không thêm nút sao lưu theo yêu cầu người dùng. Kiểm thử không ghi dữ liệu lên Supabase thật.
