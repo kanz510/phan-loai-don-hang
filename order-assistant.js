@@ -72,11 +72,11 @@
 
  // Local pet activities never call the AI or touch order data.
  const care=document.createElement('div');care.className='em-kem-care';
- care.innerHTML='<button type="button" class="em-kem-care-toggle" aria-label="Chăm Em Kem" aria-expanded="false" aria-controls="emKemCare">🐾</button><div id="emKemCare" class="em-kem-care-menu" aria-label="Chăm Em Kem" hidden><strong>Chăm Em Kem</strong><button type="button" data-pet-action="walk">Đi dạo</button><button type="button" data-pet-action="eat">Cho ăn</button><button type="button" data-pet-action="drink">Cho uống</button><button type="button" data-pet-action="sleep">Đi ngủ</button><button type="button" data-pet-action="stay" aria-pressed="false">Ở yên</button></div>';
+ care.innerHTML='<button type="button" class="em-kem-care-toggle" aria-label="Chăm Em Kem" aria-expanded="false" aria-controls="emKemCare">🐾</button><div id="emKemCare" class="em-kem-care-menu" aria-label="Chăm Em Kem" hidden><strong>Chăm Em Kem</strong><button type="button" data-pet-action="auto" aria-pressed="true">Tự động · random ✓</button><button type="button" data-pet-action="walk">Đi dạo</button><button type="button" data-pet-action="eat">Cho ăn</button><button type="button" data-pet-action="drink">Cho uống</button><button type="button" data-pet-action="sleep">Đi ngủ</button><button type="button" data-pet-action="stay" aria-pressed="false">Ở yên</button></div>';
  host.append(care);
  const careToggle=care.querySelector('.em-kem-care-toggle'),careMenu=care.querySelector('.em-kem-care-menu'),stayButton=care.querySelector('[data-pet-action="stay"]'),petBubble=host.querySelector('.em-kem-bubble');
- let petState='sit',petTimer=0,walkFrame=0,roaming=true,petPauseUntil=0,petLastTime=0;
- try{roaming=localStorage.getItem('em-kem-roaming-v1')!=='off';}catch{}
+ let petState='sit',petTimer=0,walkFrame=0,roaming=true,petPauseUntil=0,petLastTime=0,lastAutoAction='';
+ // Every page starts in automatic mode; Stay pauses only the current visit.
  const petLabels={sit:'May cần giúp gì ?',walk:'Kem đi dạo xíu nha!',sleep:'Kem ngủ một chút nha…',eat:'Măm măm… ngon quá!',drink:'Kem uống nước nè!'};
  function setPetState(state){
   petState=state;host.dataset.petState=state;
@@ -84,13 +84,13 @@
   if(!mascot.src.endsWith('/'+file))mascot.src='assets/'+file;
   petBubble.textContent=petLabels[state]||petLabels.sit;
  }
- function updateStay(){stayButton.setAttribute('aria-pressed',String(!roaming));stayButton.textContent=roaming?'Ở yên':'Đang ở yên ✓';}
- function persistRoaming(){try{localStorage.setItem('em-kem-roaming-v1',roaming?'on':'off');}catch{}updateStay();}
+ function updateStay(){stayButton.setAttribute('aria-pressed',String(!roaming));stayButton.textContent=roaming?'Ở yên':'Đang ở yên ✓';const autoButton=care.querySelector('[data-pet-action="auto"]');autoButton.setAttribute('aria-pressed',String(roaming));autoButton.textContent=roaming?'Tự động · random ✓':'Bật tự động · random';}
+ function persistRoaming(){updateStay();}
  function petBlocked(){
   const focused=document.activeElement;
   return host.hidden||document.hidden||!panel.hidden||drag||!careMenu.hidden||motion.matches||(focused&&focused.matches('input,textarea,select,[contenteditable="true"]'))||Date.now()<petPauseUntil;
  }
- function schedulePet(delay=14000){clearTimeout(petTimer);petTimer=setTimeout(petRoutine,delay);}
+ function schedulePet(delay=6000+Math.random()*5000){clearTimeout(petTimer);petTimer=setTimeout(petRoutine,delay);}
  function stopPet(pause=0){clearTimeout(petTimer);cancelAnimationFrame(walkFrame);walkFrame=0;petPauseUntil=Math.max(petPauseUntil,Date.now()+pause);mascot.style.transform='';setPetState('sit');}
  function positionCare(){
   if(careMenu.hidden)return;
@@ -122,8 +122,9 @@
  }
  function petRoutine(){
   if(!roaming||petBlocked()){schedulePet();return;}
-  const chance=Math.random();
-  if(chance<0.55)startWalk();else if(chance<0.75)petActivity('sleep');else if(chance<0.85)petActivity('eat');else if(chance<0.95)petActivity('drink');else{setPetState('sit');schedulePet();}
+  const choices=['walk','sit','sleep','eat','drink'].filter(action=>action!==lastAutoAction);
+  const action=choices[Math.floor(Math.random()*choices.length)];lastAutoAction=action;
+  if(action==='walk')startWalk();else if(action==='sit'){setPetState('sit');schedulePet();}else petActivity(action);
  }
  careToggle.addEventListener('click',()=>{
   const show=careMenu.hidden;stopPet();careMenu.hidden=!show;careToggle.setAttribute('aria-expanded',String(show));positionCare();if(!show)schedulePet();
@@ -131,7 +132,8 @@
  careMenu.addEventListener('click',event=>{
   const button=event.target.closest('[data-pet-action]');if(!button)return;
   const action=button.dataset.petAction;closeCare();
-  if(action==='stay'){roaming=!roaming;persistRoaming();stopPet();schedulePet();}
+  if(action==='auto'){roaming=true;persistRoaming();stopPet();petPauseUntil=0;schedulePet(500);}
+  else if(action==='stay'){roaming=!roaming;persistRoaming();stopPet();schedulePet();}
   else if(action==='walk'){roaming=true;persistRoaming();petPauseUntil=0;startWalk(true);}
   else petActivity(action);
  });
@@ -142,7 +144,7 @@
  window.addEventListener('resize',()=>{stopPet();positionCare();schedulePet();});
  launcher.addEventListener('pointerdown',()=>{stopPet(30000);schedulePet();});
  motion.addEventListener?.('change',()=>{stopPet();schedulePet();});
- updateStay();setPetState('sit');schedulePet(18000);
+ updateStay();setPetState('sit');schedulePet(3500);
 
  // A short synthesized woof, only after a deliberate click; never autoplay.
  let barkAudio=null,lastBark=0;
