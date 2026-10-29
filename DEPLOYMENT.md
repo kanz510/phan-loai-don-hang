@@ -78,4 +78,4 @@ Làm theo [AI-SETUP.md](AI-SETUP.md). Cần chạy `supabase-ai-chat.sql`, đặ
 
 ## Frontend release / Home Screen updates
 
-Every frontend release must change the `app-version` meta tag in all four HTML entry points and use that same version in their local JS/CSS URLs (including `app-update.js`). Commit these changes atomically with the assets. The updater checks the deployed HTML with `cache: no-store` on launch/resume and reloads to a versioned page URL when safe. Active order/login inputs or a chat request postpone automatic reload; a visible update button remains available. It does not clear Supabase auth or Em Kem history. A copy already suspended on an older build without the updater needs one manual reload to bootstrap this feature.
+Versioning is automatic during the existing Pages/Jekyll build: all four HTML entry points use `site.github.build_revision | slice: 0, 8` in app-version and all JS/CSS URLs. Do not edit version strings by hand. Pages remains on main/root; no source setting change is required. See FRONTEND.md for the file map and checks. The updater checks fresh HTML on launch/resume and protects active edits and chat.

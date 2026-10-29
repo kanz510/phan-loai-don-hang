@@ -1,0 +1,4 @@
+plugins:
+  - jekyll-github-metadata
+exclude:
+  - tests
