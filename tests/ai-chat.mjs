@@ -89,13 +89,13 @@ assert.equal(models,beforeFastModels);assert.equal(quotaCalls,beforeFastQuota+1)
 console.log('PASS direct statistics: zero provider calls, fresh RLS data, one quota charge, Vietnam periods, year boundary and complex-question fallback.');
 
 const providerEnv={SUPABASE_URL:'https://db.test',SUPABASE_ANON_KEY:'public-key',GROQ_API_KEY:'groq-private-test',XKIRO_API_KEY:'private-test-key'};
-const routeLogs=[],routeCalls=[];let groqStatus=200,groqNetwork=false;
+const routeLogs=[],routeCalls=[];let groqStatus=200,groqNetwork=false,groqErrorCode=null;
 const routeFetch=async(url,options)=>{
  if(url==='https://api.groq.com/openai/v1/chat/completions'){
   routeCalls.push('groq');assert.equal(options.headers.Authorization,'Bearer groq-private-test');
   const body=JSON.parse(options.body);assert.equal(body.model,'openai/gpt-oss-120b');assert.equal(body.reasoning_effort,'low');
   if(groqNetwork)throw new TypeError('private failure');
-  if(groqStatus!==200)return new Response('{}',{status:groqStatus});
+  if(groqStatus!==200)return new Response(JSON.stringify({error:{code:groqErrorCode}}),{status:groqStatus});
   return fetchImpl('https://api.xkiro.com/v1/chat/completions',{...options,headers:{...options.headers,Authorization:'Bearer private-test-key'}});
  }
  if(url==='https://api.xkiro.com/v1/chat/completions')routeCalls.push('xkiro');
@@ -114,3 +114,10 @@ groqStatus=200;groqNetwork=true;routeCalls.length=0;response=await primaryHandle
 routeCalls.length=0;response=await primaryHandler(req('POST',{messages:[{role:'user',content:'Tháng này có bao nhiêu đơn chưa giao và tổng tiền là bao nhiêu?'}]}));assert.equal(response.status,200);assert.deepEqual(routeCalls,[]);
 assert.ok(routeLogs.some(e=>e.event==='order_chat_provider_fallback'));assert.ok(!JSON.stringify(routeLogs).includes('groq-private-test'));assert.ok(!JSON.stringify(routeLogs).includes('private failure'));
 console.log('PASS Groq primary, sticky xKiro fallback for transient errors/network, no fallback for config errors, direct path, safe logs and single quota charge.');
+
+assert.equal(queryOrders(rows,{...defaults,delivery:['da giao']}).delivery_counts['Đã giao'],1);
+assert.equal(queryOrders(rows,{...defaults,delivery:[' ĐÃ GIAO ']}).count,1);
+
+groqStatus=400;groqErrorCode='tool_use_failed';routeCalls.length=0;response=await primaryHandler(req());assert.equal(response.status,200);assert.deepEqual(routeCalls,['groq','xkiro','xkiro']);groqStatus=200;groqErrorCode=null;
+assert.ok(routeLogs.some(e=>e.event==='order_chat_provider_tool_error'&&e.code==='tool_use_failed'));
+console.log('PASS Groq canonical tool schema and fallback only for recognized tool-generation errors.');
