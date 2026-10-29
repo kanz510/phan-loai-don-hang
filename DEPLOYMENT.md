@@ -1,5 +1,12 @@
 # Kích hoạt đăng nhập và lưu đơn chung
 
+## Nâng cấp riêng cho hủy đơn (dự án đang hoạt động)
+
+Chạy [supabase-cancel-orders.sql](supabase-cancel-orders.sql) trong SQL Editor của đúng dự án Supabase. Tệp này bổ sung `Đã hủy` vào ràng buộc `orders_input_valid`, giữ các kiểm tra tiền/tên/thanh toán và không đổi bản ghi, quyền, thành viên hay trigger phiên bản. Có thể chạy lại. Không cần chạy lại toàn bộ script phân quyền chỉ để thêm hủy đơn.
+
+Nếu chưa chạy, nút hủy không thể ghi vào server vì ràng buộc cũ chỉ nhận ba trạng thái; frontend báo lỗi, không hiển thị thành công giả. Sau khi chạy, kiểm tra bằng đơn thử được tạo cho việc kiểm thử, không hủy đơn thật chỉ để xác minh. Kiểm tra trạng thái sau tải lại và trên tài khoản thứ hai. Hủy không tự thực hiện hoàn tiền.
+
+
 ## Trạng thái và thứ tự triển khai
 
 Dự án Supabase đã có bảng `orders` và 31 đơn. Bản nâng cấp giữ nguyên bảng, ID và dữ liệu này; **không tự thêm đơn mẫu, không xóa bảng**. Chỉ deploy frontend mới sau khi thực hiện bước 1–3 bên dưới. Nếu chưa chạy migration, bản mới sẽ từ chối truy cập thay vì quay về dữ liệu giả/localStorage.

@@ -1,4 +1,4 @@
-# Phân loại đơn hàng
+# Quản lý đơn hàng của May 🫶🏻
 
 Ứng dụng quản lý đơn dùng chung qua Supabase với đăng nhập và quyền thành viên. HTML/CSS/JavaScript thuần, SDK Supabase 2.49.8 đóng gói sẵn trong `vendor/` (MIT), không cần build hay CDN.
 
@@ -40,3 +40,11 @@ Browser test dùng hai browser context và SDK thật nhưng giả lập Auth/Po
 ## Màu sắc và chuyển động
 
 Đơn đã giao có nền xanh lá, chưa giao có nền vàng cam, chưa rõ có nền xanh xám; nhãn chữ và biểu tượng luôn đi kèm màu. Có bộ lọc nhanh theo trạng thái với số đơn. Thống kê, thao tác nhanh và các nút dùng biểu tượng SVG nội bộ trong `icons.svg`, không cần tải font/icon từ dịch vụ ngoài. Hiệu ứng mở trang và hover ngắn; tự tắt animation/transition khi thiết bị bật giảm chuyển động. Các dòng đơn không có animation lặp khi đồng bộ nền.
+
+## Hủy đơn
+
+Danh sách có nút **Hủy đơn** với xác nhận. Hủy chỉ đổi trạng thái thành **Đã hủy**, giữ nguyên bản ghi, số tiền, phương thức thanh toán và ghi chú; không tự hoàn tiền. Đơn đã hủy có nền hồng, bộ lọc riêng, thẻ thống kê và lối vào từ trang tổng quan. Đơn đã hủy không còn nút hủy lặp; vẫn có thể mở Sửa để điều chỉnh trạng thái nếu cần. Xóa vẫn là tác vụ riêng, có xác nhận.
+
+**Cần nâng cấp Supabase một lần:** chạy [supabase-cancel-orders.sql](supabase-cancel-orders.sql) trong SQL Editor bằng tài khoản chủ dự án. Nếu chưa chạy, giao diện báo lỗi và giữ nguyên trạng thái khi máy chủ từ chối. Tệp chỉ mở rộng ràng buộc dữ liệu, không thay đơn hay quyền. Các script schema đầy đủ cũng đã cập nhật cho cài đặt mới.
+
+Tổng số đơn vẫn gồm cả đơn hủy; **Giá trị đơn chưa hủy** chỉ cộng đơn còn hiệu lực. Khi lọc đơn hủy, danh sách vẫn hiển thị số tiền gốc từng đơn để đối chiếu, tổng giá trị còn hiệu lực bằng 0. Xuất CSV vẫn gồm mọi đơn và trạng thái thực tế, bao gồm đơn hủy.

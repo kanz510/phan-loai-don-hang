@@ -49,3 +49,14 @@ tr[data-delivery=delivered]{--row-bg:var(--done);--row-hover:var(--done-hover);-
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 body[data-busy=true] #saveButton::after{content:"";width:14px;height:14px;border:2px solid #ffffff65;border-top-color:white;border-radius:50%;animation:spin .75s linear infinite}body[data-busy=true] #saveButton{opacity:.8}@keyframes spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){body[data-busy=true] #saveButton::after{animation:none}}
 @media(max-width:540px){.app-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.app-nav a{justify-content:center;padding:9px 3px;gap:5px;font-size:10px}}
+/* May's identity and the fourth, cancelled order state. */
+h1{font-size:19px;max-width:480px;line-height:1.4}.brand{max-width:65%}
+.cards{grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}.card{padding:23px 18px 20px}.card b{font-size:27px}.card:nth-child(2) b{font-size:24px}
+.card[data-stat=cancelled]{background:linear-gradient(130deg,#fff0f3,#fae1e8);border-color:#edd0da;color:#963e59}.card[data-stat=cancelled] small{color:#875464}
+.quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.quick-action.quick-cancel>.quick-icon{background:#fde6ee;color:#a44765}
+tr[data-delivery=cancelled]{--row-bg:#fcebf0;--row-hover:#f8e0e8;--row-edge:#d27c99}.tag.cancelled{background:#f6d8e2;color:#8b3554;border-color:#e7b8c9}
+.status-filter[data-delivery-filter="Đã hủy"]{background:#fcebf0;color:#8b3554}button.cancel-order{background:#fff1f5;color:#953e5c;border-color:#e9c7d4;box-shadow:none}
+@media(hover:hover){button.cancel-order:hover:not(:disabled){background:#f8dce6;border-color:#d9a5b8;box-shadow:0 4px 10px #9d47651a}}
+@media(max-width:1100px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}.card b{font-size:26px}.card:nth-child(2) b{font-size:24px}}
+@media(max-width:800px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.quick-actions{grid-template-columns:1fr}.card[data-stat=cancelled]{grid-column:1/-1}.card[data-stat=cancelled] b{margin-top:10px}.actions{flex-wrap:wrap}}
+@media(max-width:540px){h1{font-size:15px;line-height:1.4;max-width:190px}.brand{max-width:63%;gap:8px}.account-bar{max-width:120px}.account-bar span{max-width:120px}.logo{width:34px;height:37px}.cards{gap:11px}.card{padding:20px 16px 18px}.card b{font-size:23px}.card:nth-child(2) b{font-size:20px}.actions{flex-wrap:nowrap}.actions button,.actions .button{padding:7px 6px;font-size:10px;gap:5px}.actions .icon{width:12px;height:12px}}
