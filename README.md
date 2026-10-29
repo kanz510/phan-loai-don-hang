@@ -36,3 +36,7 @@ node tests/schema.cjs
 ```
 
 Browser test dùng hai browser context và SDK thật nhưng giả lập Auth/PostgREST, không ghi tới dự án Supabase thật. SQL test dùng PostgreSQL/PGlite để kiểm tra migration trên schema cũ, RLS, quyền và xung đột phiên bản. Kiểm thử giao diện còn kiểm tra tải trực tiếp từng trang, quay lại đúng bộ lọc/số trang, ID không tồn tại, chặn liên kết quay lại ra ngoài website và đường dẫn dưới thư mục con như GitHub Pages. Xem [REVIEW.md](REVIEW.md) và [DEPLOYMENT.md](DEPLOYMENT.md) về phạm vi xác minh.
+
+## Màu sắc và chuyển động
+
+Đơn đã giao có nền xanh lá, chưa giao có nền vàng cam, chưa rõ có nền xanh xám; nhãn chữ và biểu tượng luôn đi kèm màu. Có bộ lọc nhanh theo trạng thái với số đơn. Thống kê, thao tác nhanh và các nút dùng biểu tượng SVG nội bộ trong `icons.svg`, không cần tải font/icon từ dịch vụ ngoài. Hiệu ứng mở trang và hover ngắn; tự tắt animation/transition khi thiết bị bật giảm chuyển động. Các dòng đơn không có animation lặp khi đồng bộ nền.
