@@ -12,6 +12,8 @@ create table if not exists public.orders (
 );
 alter table public.orders add column if not exists version integer not null default 1;
 alter table public.orders add column if not exists created_by uuid references auth.users(id) default auth.uid();
+-- Whole VND actually received as commission; amount_k remains thousands of VND.
+alter table public.orders add column if not exists commission_amount numeric not null default 0;
 
 create table if not exists public.order_members (
  user_id uuid primary key references auth.users(id) on delete cascade,
@@ -43,8 +45,8 @@ revoke all on public.orders from public,anon,authenticated;
 revoke all on public.order_members from public,anon,authenticated;
 grant select on public.order_members to authenticated;
 grant select,delete on public.orders to authenticated;
-grant insert(customer_name,item,payment_method,amount_k,delivery_status,note) on public.orders to authenticated;
-grant update(customer_name,item,payment_method,amount_k,delivery_status,note) on public.orders to authenticated;
+grant insert(customer_name,item,payment_method,amount_k,delivery_status,note,commission_amount) on public.orders to authenticated;
+grant update(customer_name,item,payment_method,amount_k,delivery_status,note,commission_amount) on public.orders to authenticated;
 grant usage on sequence public.orders_id_seq to authenticated;
 
 create or replace function public.touch_order_version() returns trigger
@@ -69,6 +71,13 @@ alter table public.orders add constraint orders_input_valid check (
  and delivery_status in ('Chưa rõ','Đã giao','Chưa giao','Đã hủy')
  and length(coalesce(note,'')) <= 2000
 ) not valid;
+-- Separate from orders_input_valid so the cancellation migration cannot remove it.
+alter table public.orders drop constraint if exists orders_commission_valid;
+alter table public.orders add constraint orders_commission_valid check (
+ commission_amount >= 0 and commission_amount <= 9000000000000
+ and commission_amount <> 'NaN'::numeric
+ and commission_amount = trunc(commission_amount)
+);
 create index if not exists orders_created_at_idx on public.orders(created_at desc);
 do $$ begin
  if exists(select 1 from pg_publication where pubname='supabase_realtime')

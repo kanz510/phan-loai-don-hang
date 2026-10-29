@@ -64,3 +64,14 @@ Kiểm thử browser đạt: hủy thành công/không xác nhận/server chưa 
 Giữ bốn màu trạng thái và nhãn/icon: đã giao mint, chưa giao peach, đã hủy coral nhạt, chưa rõ xám ấm. Không thay mã dữ liệu, SQL, quyền hoặc nghiệp vụ. Chữ nút coral có tỷ lệ tương phản 4.76:1, chữ phụ trên nền đạt 5.53:1. Hover dùng chữ nâu đậm hơn để giữ độ tương phản. Giữ focus, chuyển động nhẹ và prefers-reduced-motion.
 
 Chạy lại tests/regression.cjs bằng Chromium + SDK thật với API giả lập: các luồng hiện có, bốn trạng thái và cả bốn trang ở 375/768/1440px đều đạt. Đã rà ảnh tổng quan/danh sách desktop và tổng quan/biểu mẫu mobile theo phương án đã chọn. Không ghi thử lên dữ liệu thật.
+
+
+## Hoa hồng nhận được và bộ lọc thời gian
+
+Thêm hoa hồng thực nhận theo **đồng nguyên** cho từng đơn (`commission_amount`, tối đa 9.000.000.000.000 đ), tổng quan và tổng của toàn bộ kết quả lọc. Tổng tiền hoa hồng cộng bằng BigInt trước khi định dạng để tránh mất chính xác khi nhiều khoản lớn. Đơn hủy vẫn giữ khoản thực nhận; không tự hoàn/trừ hoặc tính hoa hồng theo giá đơn. CSV giữ sáu cột cũ, nối thêm hoa hồng và ngày tạo.
+
+Thêm tháng/năm (tháng trống là cả năm) và khoảng ngày riêng biệt, dùng `created_at` quy đổi Asia/Ho_Chi_Minh qua Intl formatToParts. So sánh khóa YYYY-MM-DD đã xác thực để bao trọn ngày cuối, không dùng ngày UTC. Hỗ trợ một đầu khoảng trống; đảo ngày báo lỗi. Kết hợp các bộ lọc cũ, đổi điều kiện về trang 1 và giữ tham số URL qua reload/quay về từ sửa. Panel thời gian nằm ngoài vùng sticky để không chiếm quá nhiều màn hình điện thoại. Ngày đơn hiển thị rõ; không đoán lại ngày bán của dữ liệu cũ nhập cùng đợt.
+
+`supabase-commission.sql` nâng cấp hẹp: thêm cột mặc định 0, check độc lập và quyền ghi cột, không đụng RLS/member/trigger hoặc dữ liệu khác. Script schema đầy đủ cập nhật tương đương. Frontend thử cột mới, chỉ fallback nếu đúng lỗi thiếu commission_amount; vẫn đọc/lưu hoa hồng 0 với schema cũ nhưng không âm thầm bỏ khoản khác 0. Sau nâng cấp, refresh thử lại cột. Phiên triển khai này chưa có quyền quản trị Supabase nên chưa tự chạy SQL trên dự án thật.
+
+Kiểm thử SQL/PGlite đạt: schema cũ thiếu cột, chạy nâng cấp hai lần bảo toàn dữ liệu, default 0, số tối đa, từ chối âm/thập phân/NaN/Infinity/quá giới hạn, chỉ thành viên được ghi, không tự sửa version/thành viên, version tăng/xung đột, hủy giữ hoa hồng và migration hủy không bỏ check hoa hồng. Kiểm thử Chromium với SDK thật và API giả lập đạt các luồng hoa hồng, fallback schema, múi giờ qua UTC17, biên cuối tháng, năm nhuận, lọc cả năm/khoảng mở/khoảng đảo, kết hợp trạng thái và URL. Không ghi lên Supabase thật.

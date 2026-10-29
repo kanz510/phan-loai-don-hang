@@ -1,5 +1,14 @@
 # Kích hoạt đăng nhập và lưu đơn chung
 
+## Nâng cấp hoa hồng (dự án đang hoạt động)
+
+Chạy [supabase-commission.sql](supabase-commission.sql) trong SQL Editor của đúng dự án Supabase. Tệp thêm `commission_amount` (đồng nguyên, mặc định 0), ràng buộc độc lập về số tiền và chỉ mở thêm quyền INSERT/UPDATE cột đó cho thành viên. Không thay chính sách RLS, ngày tạo, trạng thái, phiên bản hoặc các giá trị đơn hiện có. Có thể chạy lại mà không đặt lại hoa hồng đã nhập. Không cần chạy lại toàn bộ script phân quyền.
+
+Sau đó tải lại danh sách để ứng dụng nhận cột mới. Xác minh nhập/sửa hoa hồng trên một đơn thử, tải lại và xem tổng ở trang tổng quan. Hủy đơn giữ hoa hồng thực nhận. Nếu chưa chạy SQL, ứng dụng đọc theo schema cũ, lưu đơn hoa hồng 0 được, nhưng không nhận lưu hoa hồng khác 0; nội dung nhập được giữ để tránh mất thông tin. Không có thao tác ghi thử lên đơn thật trong kiểm thử tự động.
+
+Bộ lọc thời gian không cần nâng cấp SQL; dùng `created_at` hiện có, quy đổi sang giờ Việt Nam và tính cả hai đầu khoảng ngày.
+
+
 ## Nâng cấp riêng cho hủy đơn (dự án đang hoạt động)
 
 Chạy [supabase-cancel-orders.sql](supabase-cancel-orders.sql) trong SQL Editor của đúng dự án Supabase. Tệp này bổ sung `Đã hủy` vào ràng buộc `orders_input_valid`, giữ các kiểm tra tiền/tên/thanh toán và không đổi bản ghi, quyền, thành viên hay trigger phiên bản. Có thể chạy lại. Không cần chạy lại toàn bộ script phân quyền chỉ để thêm hủy đơn.

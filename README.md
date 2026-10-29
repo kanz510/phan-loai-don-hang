@@ -52,3 +52,18 @@ Tổng số đơn vẫn gồm cả đơn hủy; **Giá trị đơn chưa hủy**
 ## Phong cách Peach Boutique
 
 Giao diện dùng bảng màu đã chọn: coral `#F28076`, blush `#FFB6AF`, kem `#FAE0C7`, peach `#FBC193`, mint `#4EB09B`. Nền kem hồng, panel trắng ấm, tiêu đề serif nâu và logo chữ m; nút chính coral dùng chữ nâu đậm để dễ đọc. Mint dành chủ yếu cho đơn đã giao; chưa giao màu peach, đã hủy coral nhạt, chưa rõ xám ấm. Cả bốn trang dùng chung phong cách và vẫn hỗ trợ giảm chuyển động.
+
+## Hoa hồng đã nhận và lọc ngày
+
+Mỗi đơn có số **Hoa hồng đã nhận · đồng**, nhập số nguyên như `50000` = `50.000 ₫` (khác số tiền đơn vẫn nhập theo nghìn đồng). Để trống tương đương 0. Số hoa hồng được hiển thị trong danh sách và có tổng riêng ở trang tổng quan. Đây là tiền thực nhận người dùng ghi nhận, nên tổng hoa hồng gồm cả đơn đã hủy; sửa số về 0 hoặc điều chỉnh nếu khoản đó đã được hoàn/trừ. Hoa hồng không tự tính theo giá trị đơn và không tự thay đổi khi hủy.
+
+Cần chạy một lần [supabase-commission.sql](supabase-commission.sql) trong SQL Editor của dự án đang dùng để thêm cột và quyền ghi. Đơn cũ mặc định 0. Nếu chưa nâng cấp, ứng dụng vẫn đọc/lưu được đơn không có hoa hồng; nhập hoa hồng khác 0 sẽ báo lỗi và giữ biểu mẫu, không báo thành công giả. Sau khi chạy SQL, tải lại danh sách để kích hoạt. Không cần chạy lại toàn bộ script phân quyền. Các script cài đặt đầy đủ đã bao gồm cột mới.
+
+Mục **Lọc theo thời gian** ở danh sách dùng ngày tạo đơn theo **Asia/Ho_Chi_Minh (UTC+7)**:
+
+- **Theo tháng / năm:** chọn năm và tháng, hoặc chọn “Cả năm”.
+- **Theo khoảng ngày:** tính cả ngày đầu/ngày cuối. Có thể chỉ chọn từ ngày hoặc đến ngày; để cả hai trống không giới hạn ngày.
+- Hai chế độ hoạt động riêng, kết hợp được tìm kiếm/thanh toán/trạng thái. Khoảng ngày đảo ngược báo lỗi rõ ràng. Đổi lọc về trang 1; URL giữ bộ lọc sau reload hoặc quay lại từ sửa đơn.
+- Tổng hoa hồng cuối danh sách tính trên **toàn bộ kết quả lọc**, không chỉ trang hiện tại. Thẻ tổng quan tính toàn bộ đơn.
+- Ngày tạo hiển thị trong danh sách và trên trang sửa; đơn cũ được nhập cùng một đợt có thể có cùng ngày tạo. Không suy luận ngày bán từ tên/ghi chú. Ngày tạo chưa có công cụ chỉnh sửa trong giao diện.
+- CSV xuất tất cả đơn như trước, bổ sung hoa hồng theo đồng và ngày tạo theo giờ Việt Nam, giữ nguyên sáu cột cũ đầu tiên.
