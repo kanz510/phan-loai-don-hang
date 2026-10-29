@@ -39,3 +39,10 @@ Chạy SQL, tạo tài khoản và cấp thành viên theo [DEPLOYMENT.md](DEPLO
 Trang `index.html` chỉ giữ thống kê và ba thao tác nhanh. Danh sách ở `orders.html`, thêm/sửa ở `order.html`, đăng nhập/tài khoản ở `account.html`. Dùng chung `styles.css`, `app.js`, phiên Supabase và thanh điều hướng. Không thay schema, quyền hoặc dữ liệu máy chủ.
 
 Đã cập nhật kiểm thử Chromium + SDK/Auth/PostgREST giả lập và chạy đạt: điều hướng giữa bốn trang, yêu cầu đăng nhập rồi quay về trang đích, đường dẫn dưới `/shop/` như GitHub Pages, giữ bộ lọc/trang sau reload/hủy/lưu, mở sửa bằng ID, ID không tồn tại không được lưu thành đơn mới, chặn URL quay lại ra ngoài website, xung đột sửa và lỗi lưu giữ nội dung. Các kiểm thử dữ liệu chung, CSV, XSS, 1.001 đơn, bảng rỗng và localStorage cũ tiếp tục đạt. Cả bốn trang không tràn ngang ở 375/768/1440px; đã xem ảnh tổng quan desktop/mobile và trang biểu mẫu mobile. Không thêm nút sao lưu theo yêu cầu người dùng. Kiểm thử không ghi dữ liệu lên Supabase thật.
+
+
+## Cải thiện giao diện và màu trạng thái giao hàng
+
+Thay stylesheet cũ bằng bộ giao diện thống nhất: nền sáng có điểm màu, thẻ thống kê teal/tím/xanh/cam, khoảng cách rõ ràng, nút gradient và biểu tượng SVG nội bộ. Mỗi dòng đơn gắn `data-delivery` để nền xanh lá (đã giao), vàng cam (chưa giao), xanh xám (chưa rõ) cùng viền nhận diện, biểu tượng và nhãn chữ. Trên mobile màu được áp dụng cho toàn bộ thẻ đơn. Hover giữ nguyên nhóm màu trạng thái. Bổ sung bộ lọc trạng thái nhanh có số đơn, đồng bộ với select và URL hiện có.
+
+Animation giới hạn ở mở trang, thao tác nhanh, hover/nhấn nút và chỉ báo đang lưu; không tạo hiệu ứng lặp cho dòng đơn khi polling. `prefers-reduced-motion` tắt các animation và transition. Đã mở rộng kiểm thử browser để xác nhận ba nền khác nhau, bộ lọc nhanh, giảm chuyển động và giữ các luồng CRUD/auth/CSV/điều hướng. Kiểm tra responsive cả bốn trang ở 375/768/1440px bằng dữ liệu mô phỏng có cả ba trạng thái.
