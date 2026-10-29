@@ -74,6 +74,9 @@ async function startCloud(){
 }
 const fmt=n=>new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(Math.round(n*1000));
 const fmtCommission=n=>new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(n);
+// The form uses thousands of dong; persistence, totals and CSV use whole VND.
+function commissionInputToVnd(value){const text=String(value).trim();if(!text)return 0;if(!/^(?:\d+(?:\.\d{0,3})?|\.\d{1,3})$/.test(text))return NaN;const [whole,fraction='']=text.split('.');const amount=BigInt(whole||'0')*1000n+BigInt(fraction.padEnd(3,'0')||'0');return amount<=9000000000000n?Number(amount):NaN;}
+function commissionVndToInput(amount){const value=BigInt(amount);const whole=value/1000n;const fraction=String(value%1000n).padStart(3,'0').replace(/0+$/,'');return String(whole)+(fraction?'.'+fraction:'');}
 const sumCommissions=list=>list.reduce((sum,o)=>sum+BigInt(o.commission),0n);
 const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase().trim();
 function filteredOrders(){const q=normalize($('q')?.value||''),fp=$('fPay')?.value||'all',fd=$('fDel')?.value||'all';const f=dateFilter();return orders.filter(o=>matchesDate(o,f)&&(fp==='all'||o.pay===fp)&&(fd==='all'||o.del===fd)&&normalize(o.name+' '+o.item).includes(q));}
@@ -103,12 +106,12 @@ function initEditor(){
  const requested=params.get('id');
  if(requested!==null){const order=orders.find(o=>String(o.id)===requested);if(!order){setText('pageTitle','Không tìm thấy đơn');setText('dialogNotice','Đơn không tồn tại hoặc đã bị xóa. Hãy quay lại danh sách.');$('dialogNotice').hidden=false;return;}
  editId=order.id;editVersion=order.version;
- for(const [field,key] of [['fName','name'],['fItem','item'],['fPrice','price'],['fCommission','commission'],['fPayIn','pay'],['fDelIn','del'],['fNote','note']])$(field).value=order[key]??'';
+ for(const [field,key] of [['fName','name'],['fItem','item'],['fPrice','price'],['fCommission','commission'],['fPayIn','pay'],['fDelIn','del'],['fNote','note']])$(field).value=field==='fCommission'?commissionVndToInput(order.commission):order[key]??'';
  setText('createdDateHint','Ngày tạo đơn: '+displayDate(orderDateKey(order))+' · Giờ Việt Nam');setText('pageTitle','Chỉnh sửa đơn hàng');setText('formTitle','Đơn của '+order.name);setText('formMode','Đang sửa');setText('saveButton','Lưu thay đổi');setText('editNote','Lưu thay đổi để cập nhật đơn hàng dùng chung.');
  }
  $('saveButton').disabled=false;
 }
-async function saveOrder(e){e.preventDefault();if(busy||!authorized||!editorReady||!dataLoaded||$('saveButton').disabled)return;const o={name:$('fName').value.trim(),item:$('fItem').value.trim(),price:Number($('fPrice').value),commission:$('fCommission').value.trim()===''?0:Number($('fCommission').value),pay:$('fPayIn').value,del:$('fDelIn').value,note:$('fNote').value.trim()};
+async function saveOrder(e){e.preventDefault();if(busy||!authorized||!editorReady||!dataLoaded||$('saveButton').disabled)return;const o={name:$('fName').value.trim(),item:$('fItem').value.trim(),price:Number($('fPrice').value),commission:commissionInputToVnd($('fCommission').value),pay:$('fPayIn').value,del:$('fDelIn').value,note:$('fNote').value.trim()};
  for(const id of ['fName','fItem']){const input=$(id);input.setCustomValidity(input.value.trim()?'':'Vui lòng nhập nội dung, không chỉ khoảng trắng.');if(!input.reportValidity())return;}
  const id=editId??crypto.randomUUID();if(!validOrder({id,version:editVersion??1,...o})||$('fPrice').value.trim()===''){notify('Vui lòng kiểm tra thông tin và số tiền hợp lệ.');return;}
  const isEditing=editId!==null;if(isEditing&&!orders.some(x=>x.id===editId)){notify('Đơn này không còn tồn tại. Vui lòng quay lại danh sách.');return;}

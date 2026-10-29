@@ -55,7 +55,7 @@ Giao diện dùng bảng màu đã chọn: coral `#F28076`, blush `#FFB6AF`, kem
 
 ## Hoa hồng đã nhận và lọc ngày
 
-Mỗi đơn có số **Hoa hồng đã nhận · đồng**, nhập số nguyên như `50000` = `50.000 ₫` (khác số tiền đơn vẫn nhập theo nghìn đồng). Để trống tương đương 0. Số hoa hồng được hiển thị trong danh sách và có tổng riêng ở trang tổng quan. Đây là tiền thực nhận người dùng ghi nhận, nên tổng hoa hồng gồm cả đơn đã hủy; sửa số về 0 hoặc điều chỉnh nếu khoản đó đã được hoàn/trừ. Hoa hồng không tự tính theo giá trị đơn và không tự thay đổi khi hủy.
+Mỗi đơn có ô **Hoa hồng đã nhận · nghìn đồng**, nhập `50` = `50.000 ₫`, `12.5` = `12.500 ₫`. Cùng đơn vị nhập với số tiền đơn. Hỗ trợ tối đa ba chữ số sau dấu chấm, ví dụ `1.001` = `1.001 ₫`. Để trống tương đương 0. Số hoa hồng được hiển thị trong danh sách và có tổng riêng ở trang tổng quan. Đây là tiền thực nhận người dùng ghi nhận, nên tổng hoa hồng gồm cả đơn đã hủy; sửa số về 0 hoặc điều chỉnh nếu khoản đó đã được hoàn/trừ. Hoa hồng không tự tính theo giá trị đơn và không tự thay đổi khi hủy.
 
 Cần chạy một lần [supabase-commission.sql](supabase-commission.sql) trong SQL Editor của dự án đang dùng để thêm cột và quyền ghi. Đơn cũ mặc định 0. Nếu chưa nâng cấp, ứng dụng vẫn đọc/lưu được đơn không có hoa hồng; nhập hoa hồng khác 0 sẽ báo lỗi và giữ biểu mẫu, không báo thành công giả. Sau khi chạy SQL, tải lại danh sách để kích hoạt. Không cần chạy lại toàn bộ script phân quyền. Các script cài đặt đầy đủ đã bao gồm cột mới.
 
@@ -67,3 +67,6 @@ Mục **Lọc theo thời gian** ở danh sách dùng ngày tạo đơn theo **A
 - Tổng hoa hồng cuối danh sách tính trên **toàn bộ kết quả lọc**, không chỉ trang hiện tại. Thẻ tổng quan tính toàn bộ đơn.
 - Ngày tạo hiển thị trong danh sách và trên trang sửa; đơn cũ được nhập cùng một đợt có thể có cùng ngày tạo. Không suy luận ngày bán từ tên/ghi chú. Ngày tạo chưa có công cụ chỉnh sửa trong giao diện.
 - CSV xuất tất cả đơn như trước, bổ sung hoa hồng theo đồng và ngày tạo theo giờ Việt Nam, giữ nguyên sáu cột cũ đầu tiên.
+
+
+Đổi cách nhập hoa hồng không đổi dữ liệu đã lưu: nội bộ và CSV vẫn dùng đồng nguyên. Khi mở sửa, khoản đã lưu 50.000đ tự hiển thị `50`; lưu lại không làm số tiền tăng 1.000 lần. Không cần chạy thêm SQL cho thay đổi đơn vị nhập này.
