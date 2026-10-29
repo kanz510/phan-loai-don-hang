@@ -10,6 +10,8 @@ assert.equal(dateKey(rows[0].created_at),'2026-10-01');assert.equal(dateKey(rows
 let result=queryOrders(rows,{...defaults,from:'2026-10-01',to:'2026-10-31'});assert.equal(result.count,2);assert.equal(result.active_order_value_vnd,'125501');assert.equal(result.received_commission_vnd,'51001');
 assert.equal(queryOrders(rows,{...defaults,customer:'ngoc quynh',delivery:['Chưa giao'],payment:['Chưa thanh toán']}).count,1);assert.equal(queryOrders(rows,{...defaults,customer:'ngoc quynh',delivery:'Chưa giao',payment:'Chưa thanh toán'}).count,1);
 assert.equal(queryOrders(rows,{...defaults,customer:'Missing'}).count,0);
+assert.equal(queryOrders(rows,{...defaults,include_details:'False',include_notes:'true'}).orders,undefined);
+assert.throws(()=>queryOrders(rows,{...defaults,include_details:'yes'}));
 assert.equal(queryOrders(rows,{...defaults,delivery:'["Chưa giao"]',payment:'null',customer:'null',product:'null'}).count,1);
 assert.equal(queryOrders(rows,{...defaults,delivery:'["Chưa giao"]',payment:''}).count,1);
 assert.throws(()=>queryOrders(rows,{...defaults,delivery:'["evil"]'}));
