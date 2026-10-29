@@ -64,13 +64,86 @@
  });
  window.addEventListener('resize',placeMascot);window.visualViewport?.addEventListener('resize',placeMascot);
 
- function open(value){panel.hidden=!value;launcher.setAttribute('aria-expanded',String(value));if(value){placePanel();input.focus();}else launcher.focus();}
+ function open(value){stopPet();closeCare();if(!value)schedulePet();panel.hidden=!value;launcher.setAttribute('aria-expanded',String(value));if(value){placePanel();input.focus();}else launcher.focus();}
  window.mayChatSync=()=>{const next=authorized?activeUser?.id:null;if(identity!==next){identity=next;epoch++;controller?.abort();controller=null;lock(false);history=[];modeTouched=false;$('chatMode').value='quick';modeInfo();$('chatConnection').textContent='Đang kiểm tra kết nối AI…';messages.replaceChildren();input.value='';panel.hidden=true;launcher.setAttribute('aria-expanded','false');if(next){add('Chào May! 🫶🏻 '+help);checkAI(epoch);}}host.hidden=!authorized;placeMascot();};
 
  // Keep the mascot still when the visitor requests reduced motion.
  const mascot=host.querySelector('.em-kem-poodle'),motion=window.matchMedia('(prefers-reduced-motion: reduce)');
- const syncMascot=()=>{mascot.src=motion.matches?'assets/em-kem-poodle.webp':'assets/em-kem-poodle-animated.webp';};
- syncMascot();motion.addEventListener?.('change',syncMascot);
+
+ // Local pet activities never call the AI or touch order data.
+ const care=document.createElement('div');care.className='em-kem-care';
+ care.innerHTML='<button type="button" class="em-kem-care-toggle" aria-label="Chăm Em Kem" aria-expanded="false" aria-controls="emKemCare">🐾</button><div id="emKemCare" class="em-kem-care-menu" aria-label="Chăm Em Kem" hidden><strong>Chăm Em Kem</strong><button type="button" data-pet-action="walk">Đi dạo</button><button type="button" data-pet-action="eat">Cho ăn</button><button type="button" data-pet-action="drink">Cho uống</button><button type="button" data-pet-action="sleep">Đi ngủ</button><button type="button" data-pet-action="stay" aria-pressed="false">Ở yên</button></div>';
+ host.append(care);
+ const careToggle=care.querySelector('.em-kem-care-toggle'),careMenu=care.querySelector('.em-kem-care-menu'),stayButton=care.querySelector('[data-pet-action="stay"]'),petBubble=host.querySelector('.em-kem-bubble');
+ let petState='sit',petTimer=0,walkFrame=0,roaming=true,petPauseUntil=0,petLastTime=0;
+ try{roaming=localStorage.getItem('em-kem-roaming-v1')!=='off';}catch{}
+ const petLabels={sit:'May cần giúp gì ?',walk:'Kem đi dạo xíu nha!',sleep:'Kem ngủ một chút nha…',eat:'Măm măm… ngon quá!',drink:'Kem uống nước nè!'};
+ function setPetState(state){
+  petState=state;host.dataset.petState=state;
+  const file=motion.matches?'em-kem-poodle.webp':'em-kem-'+state+'.webp';
+  if(!mascot.src.endsWith('/'+file))mascot.src='assets/'+file;
+  petBubble.textContent=petLabels[state]||petLabels.sit;
+ }
+ function updateStay(){stayButton.setAttribute('aria-pressed',String(!roaming));stayButton.textContent=roaming?'Ở yên':'Đang ở yên ✓';}
+ function persistRoaming(){try{localStorage.setItem('em-kem-roaming-v1',roaming?'on':'off');}catch{}updateStay();}
+ function petBlocked(){
+  const focused=document.activeElement;
+  return host.hidden||document.hidden||!panel.hidden||drag||!careMenu.hidden||motion.matches||(focused&&focused.matches('input,textarea,select,[contenteditable="true"]'))||Date.now()<petPauseUntil;
+ }
+ function schedulePet(delay=14000){clearTimeout(petTimer);petTimer=setTimeout(petRoutine,delay);}
+ function stopPet(pause=0){clearTimeout(petTimer);cancelAnimationFrame(walkFrame);walkFrame=0;petPauseUntil=Math.max(petPauseUntil,Date.now()+pause);mascot.style.transform='';setPetState('sit');}
+ function positionCare(){
+  if(careMenu.hidden)return;
+  const r=launcher.getBoundingClientRect(),w=careMenu.offsetWidth,h=careMenu.offsetHeight;
+  careMenu.style.left=clamp(r.right-w,12,innerWidth-w-12)+'px';
+  careMenu.style.top=clamp(r.top-h-10,12,innerHeight-h-12)+'px';
+ }
+ function closeCare(){careMenu.hidden=true;careToggle.setAttribute('aria-expanded','false');}
+ function startWalk(manual=false){
+  stopPet();if(petBlocked()){schedulePet();return;}
+  placeMascot();const start=mascotPosition.x,r=launcher.getBoundingClientRect();
+  const direction=start>innerWidth/2?-1:1,target=clamp(start+direction*(60+Math.random()*55),12,innerWidth-r.width-12);
+  if(Math.abs(target-start)<8){schedulePet();return;}
+  setPetState('walk');mascot.style.transform=direction<0?'scaleX(-1)':'';
+  let travelled=0;petLastTime=0;
+  const step=timestamp=>{
+   if(petBlocked()||(!roaming&&!manual)){stopPet();schedulePet();return;}
+   if(!petLastTime)petLastTime=timestamp;
+   travelled+=Math.min(50,timestamp-petLastTime)*0.025;petLastTime=timestamp;
+   mascotPosition.x=start+Math.sign(target-start)*Math.min(travelled,Math.abs(target-start));placeMascot();
+   if(travelled<Math.abs(target-start))walkFrame=requestAnimationFrame(step);
+   else{stopPet();schedulePet();}
+  };
+  walkFrame=requestAnimationFrame(step);
+ }
+ function petActivity(state){
+  stopPet();setPetState(state);
+  petTimer=setTimeout(()=>{stopPet();schedulePet();},state==='sleep'?12000:6000);
+ }
+ function petRoutine(){
+  if(!roaming||petBlocked()){schedulePet();return;}
+  const chance=Math.random();
+  if(chance<0.55)startWalk();else if(chance<0.75)petActivity('sleep');else if(chance<0.85)petActivity('eat');else if(chance<0.95)petActivity('drink');else{setPetState('sit');schedulePet();}
+ }
+ careToggle.addEventListener('click',()=>{
+  const show=careMenu.hidden;stopPet();careMenu.hidden=!show;careToggle.setAttribute('aria-expanded',String(show));positionCare();if(!show)schedulePet();
+ });
+ careMenu.addEventListener('click',event=>{
+  const button=event.target.closest('[data-pet-action]');if(!button)return;
+  const action=button.dataset.petAction;closeCare();
+  if(action==='stay'){roaming=!roaming;persistRoaming();stopPet();schedulePet();}
+  else if(action==='walk'){roaming=true;persistRoaming();petPauseUntil=0;startWalk(true);}
+  else petActivity(action);
+ });
+ care.addEventListener('keydown',event=>{if(event.key==='Escape'){closeCare();careToggle.focus();schedulePet();}});
+ document.addEventListener('pointerdown',event=>{if(!care.contains(event.target))closeCare();});
+ document.addEventListener('focusin',event=>{if(event.target.matches('input,textarea,select,[contenteditable="true"]')){stopPet(8000);schedulePet();}});
+ document.addEventListener('visibilitychange',()=>{stopPet();if(!document.hidden)schedulePet();});
+ window.addEventListener('resize',()=>{stopPet();positionCare();schedulePet();});
+ launcher.addEventListener('pointerdown',()=>{stopPet(30000);schedulePet();});
+ motion.addEventListener?.('change',()=>{stopPet();schedulePet();});
+ updateStay();setPetState('sit');schedulePet(18000);
+
  // A short synthesized woof, only after a deliberate click; never autoplay.
  let barkAudio=null,lastBark=0;
  async function bark(){

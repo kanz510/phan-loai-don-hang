@@ -130,3 +130,16 @@ body[data-busy=true] #saveButton::after{border-color:#512a2440;border-top-color:
 @media(max-width:600px){.em-kem-near-left .em-kem-bubble{left:80px}}
 
 .em-kem-bubble{white-space:normal;width:max-content;text-align:center}
+
+/* Small care menu for the website mascot. */
+.em-kem-care-toggle{position:absolute;right:-2px;bottom:0;display:grid;place-items:center;width:32px;height:32px;min-height:32px;padding:0;border:1px solid #dbc3a9;border-radius:50%;background:#fff9f0;color:#68402c;box-shadow:0 2px 9px #68402c20;font-size:17px;cursor:pointer;touch-action:manipulation}
+.em-kem-care-menu{position:fixed;z-index:22;display:grid;gap:5px;width:164px;padding:10px;background:#fffaf4;color:#68402c;border:1px solid #e5c6aa;border-radius:16px;box-shadow:0 8px 28px #68402c25;max-height:calc(100dvh - 24px);overflow-y:auto}
+.em-kem-care-menu[hidden]{display:none}
+.em-kem-care-menu strong{font-size:12px;padding:3px 5px 6px}
+.em-kem-care-menu button{min-height:38px;padding:7px 10px;text-align:left;font-size:13px;background:#f4e9dc;color:#68402c;border:0;border-radius:9px;box-shadow:none}
+.em-kem-care-menu button:hover,.em-kem-care-menu button[aria-pressed="true"]{background:#e4efdf}
+.em-kem-care-menu :focus-visible,.em-kem-care-toggle:focus-visible{outline:3px solid #315f4d;outline-offset:2px}
+.em-kem-dragging .em-kem-care{visibility:hidden}
+.em-kem-poodle{transition:none}
+
+.may-chat-launch[aria-expanded="true"]~.em-kem-care{display:none}
