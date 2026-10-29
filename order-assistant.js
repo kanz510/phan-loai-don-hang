@@ -16,8 +16,54 @@
  function addSources(sources){if(!Array.isArray(sources))return;for(const source of sources.slice(0,4)){if(!Number.isSafeInteger(source.count)||source.count<0||![source.active_order_value_vnd,source.received_commission_vnd].every(v=>typeof v==='string'&&/^\d{1,30}$/.test(v)))continue;const period=source.from||source.to?`${source.from?displayDate(source.from):'Từ đầu'} – ${source.to?displayDate(source.to):'đến nay'}`:'Tất cả thời gian';add(`Đối chiếu từ hệ thống · ${period}${source.customer?' · Khách: '+source.customer:''}${source.product?' · Hàng: '+source.product:''}${source.delivery?' · '+source.delivery.join(', '):''}${source.payment?' · '+source.payment.join(', '):''}\n${source.count} đơn · Giá trị chưa hủy: ${fmtCommission(BigInt(source.active_order_value_vnd))} · Hoa hồng: ${fmtCommission(BigInt(source.received_commission_vnd))}.`,'bot source',sourceLink(source));}}
  modeInfo();$('chatMode').addEventListener('change',()=>{modeTouched=true;history=[];modeInfo();add($('chatMode').value==='ai'?'Đã chọn AI. Bắt đầu ngữ cảnh mới; bạn có thể hỏi tự nhiên.':'Đã chọn Tra cứu nhanh, không dùng AI. '+help);});
  function add(text,who='bot',href){const node=document.createElement('div');node.className='may-chat-message '+who;const body=document.createElement('p');body.textContent=text;node.append(body);if(href){const link=document.createElement('a');link.textContent='Xem danh sách đơn →';link.href=href;node.append(link);}messages.append(node);while(messages.children.length>40)messages.firstElementChild.remove();messages.scrollTop=messages.scrollHeight;}
- function open(value){panel.hidden=!value;launcher.setAttribute('aria-expanded',String(value));if(value)input.focus();else launcher.focus();}
- window.mayChatSync=()=>{const next=authorized?activeUser?.id:null;if(identity!==next){identity=next;epoch++;controller?.abort();controller=null;lock(false);history=[];modeTouched=false;$('chatMode').value='quick';modeInfo();$('chatConnection').textContent='Đang kiểm tra kết nối AI…';messages.replaceChildren();input.value='';panel.hidden=true;launcher.setAttribute('aria-expanded','false');if(next){add('Chào May! 🫶🏻 '+help);checkAI(epoch);}}host.hidden=!authorized;};
+
+ // Drag only the launcher: a short tap still opens the conversation.
+ const positionKey='em-kem-position-v1';let mascotPosition=null,drag=null,suppressClickUntil=0;
+ try{const saved=JSON.parse(localStorage.getItem(positionKey));if(saved&&Number.isFinite(saved.x)&&Number.isFinite(saved.y))mascotPosition=saved;}catch{}
+ const clamp=(value,min,max)=>Math.max(min,Math.min(value,Math.max(min,max)));
+ function placePanel(){
+  if(panel.hidden)return;
+  const r=launcher.getBoundingClientRect(),gap=12,w=panel.getBoundingClientRect().width;
+  panel.style.maxHeight=Math.max(80,innerHeight-gap*2)+'px';
+  const h=panel.getBoundingClientRect().height;
+  const top=r.top>=h+gap?r.top-h-gap:r.bottom+h+gap<=innerHeight?r.bottom+gap:clamp(r.top,gap,innerHeight-h-gap);
+  panel.style.left=clamp(r.right-w,gap,innerWidth-w-gap)+'px';panel.style.top=top+'px';
+ }
+ function placeMascot(){
+  if(host.hidden)return;
+  const r=launcher.getBoundingClientRect(),gap=12;
+  const p=mascotPosition||{x:innerWidth-r.width-20,y:innerHeight-r.height-20};
+  mascotPosition={x:clamp(p.x,gap,innerWidth-r.width-gap),y:clamp(p.y,gap,innerHeight-r.height-gap)};
+  host.style.left=mascotPosition.x+'px';host.style.top=mascotPosition.y+'px';host.style.right='auto';host.style.bottom='auto';
+  host.classList.toggle('em-kem-near-left',mascotPosition.x<180);placePanel();
+ }
+ function saveMascot(){try{localStorage.setItem(positionKey,JSON.stringify(mascotPosition));}catch{}}
+ launcher.addEventListener('pointerdown',event=>{
+  if(event.button!==0||!event.isPrimary)return;
+  const r=launcher.getBoundingClientRect();drag={id:event.pointerId,startX:event.clientX,startY:event.clientY,x:r.left,y:r.top,moved:false};
+  launcher.setPointerCapture(event.pointerId);
+ });
+ launcher.addEventListener('pointermove',event=>{
+  if(!drag||drag.id!==event.pointerId)return;
+  const dx=event.clientX-drag.startX,dy=event.clientY-drag.startY;
+  if(!drag.moved&&Math.hypot(dx,dy)<8)return;
+  drag.moved=true;host.classList.add('em-kem-dragging');mascotPosition={x:drag.x+dx,y:drag.y+dy};placeMascot();
+ });
+ function endDrag(event){
+  if(!drag||drag.id!==event.pointerId)return;
+  if(drag.moved){suppressClickUntil=Date.now()+500;saveMascot();}
+  drag=null;host.classList.remove('em-kem-dragging');
+  if(launcher.hasPointerCapture(event.pointerId))launcher.releasePointerCapture(event.pointerId);
+ }
+ launcher.addEventListener('pointerup',endDrag);launcher.addEventListener('pointercancel',endDrag);launcher.addEventListener('lostpointercapture',endDrag);
+ launcher.addEventListener('keydown',event=>{
+  const moves={ArrowLeft:[-16,0],ArrowRight:[16,0],ArrowUp:[0,-16],ArrowDown:[0,16]};
+  if(!moves[event.key])return;event.preventDefault();placeMascot();const [dx,dy]=moves[event.key];mascotPosition={x:mascotPosition.x+dx,y:mascotPosition.y+dy};placeMascot();saveMascot();
+ });
+ window.addEventListener('resize',placeMascot);window.visualViewport?.addEventListener('resize',placeMascot);
+
+ function open(value){panel.hidden=!value;launcher.setAttribute('aria-expanded',String(value));if(value){placePanel();input.focus();}else launcher.focus();}
+ window.mayChatSync=()=>{const next=authorized?activeUser?.id:null;if(identity!==next){identity=next;epoch++;controller?.abort();controller=null;lock(false);history=[];modeTouched=false;$('chatMode').value='quick';modeInfo();$('chatConnection').textContent='Đang kiểm tra kết nối AI…';messages.replaceChildren();input.value='';panel.hidden=true;launcher.setAttribute('aria-expanded','false');if(next){add('Chào May! 🫶🏻 '+help);checkAI(epoch);}}host.hidden=!authorized;placeMascot();};
 
  // Keep the mascot still when the visitor requests reduced motion.
  const mascot=host.querySelector('.em-kem-poodle'),motion=window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -46,7 +92,7 @@
   }catch{/* Sound is optional; the chat remains usable when audio is blocked. */}
  }
 
- launcher.addEventListener('click',()=>{if(panel.hidden)bark();open(panel.hidden);});$('chatClose').addEventListener('click',()=>open(false));host.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden){e.preventDefault();open(false);}});
+ launcher.addEventListener('click',event=>{if(event.detail!==0&&Date.now()<suppressClickUntil){event.preventDefault();return;}if(panel.hidden)bark();open(panel.hidden);});$('chatClose').addEventListener('click',()=>open(false));host.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden){e.preventDefault();open(false);}});
  function period(q,now){const today=orderDateKey({createdAt:now.toISOString()}),year=Number(today.slice(0,4)),month=Number(today.slice(5,7));const query=new URLSearchParams();let label='tất cả thời gian',test=()=>true;
   const exact=q.match(/\b(?:ngay\s+)?(\d{1,2})\/(\d{1,2})\/(\d{4})\b/);
   const dated=q.match(/\bthang\s+(\d{1,2})(?:\s*[\/\-]\s*(\d{4})|\s+nam\s+(\d{4}))?\b/);

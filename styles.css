@@ -118,3 +118,13 @@ body[data-busy=true] #saveButton::after{border-color:#512a2440;border-top-color:
 /* The Poodle now animates its own paws, tail and mouth in image frames. */
 .em-kem-poodle{animation:none;transform:none}
 .may-chat-launch[aria-expanded="true"] .em-kem-poodle,.may-chat-launch:hover .em-kem-poodle{animation:none}
+
+/* Move Em Kem away from controls; the conversation stays within the viewport. */
+.may-chat-launch{touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.em-kem-poodle{-webkit-user-drag:none}
+.em-kem-dragging .may-chat-launch{cursor:grabbing}
+.em-kem-dragging .em-kem-bubble{visibility:hidden}
+.em-kem-near-left .em-kem-bubble{right:auto;left:98px;border-radius:18px 18px 18px 4px}
+.em-kem-near-left .em-kem-bubble::after{right:auto;left:-7px;border-right:0;border-top:0;border-left:1px solid #e5c6aa;border-bottom:1px solid #e5c6aa}
+.may-chat-panel{position:fixed;right:auto;bottom:auto}
+@media(max-width:600px){.em-kem-near-left .em-kem-bubble{left:80px}}
