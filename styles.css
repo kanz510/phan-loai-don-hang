@@ -255,3 +255,8 @@ button.em-kem-toggle{flex-shrink:0;min-width:118px;background:#ffded6;color:#704
 button.em-kem-toggle[aria-pressed=false]{background:#e5f2ec;color:#315f4d;border-color:#c5dfd1}
 @media(hover:hover){button.em-kem-toggle:hover:not(:disabled){background:#ffd0c6;border-color:#dda69b}button.em-kem-toggle[aria-pressed=false]:hover:not(:disabled){background:#d7eadf;border-color:#a8cbb7}}
 @media(max-width:540px){.em-kem-settings{padding:20px;gap:12px}.em-kem-settings h2{font-size:15px}button.em-kem-toggle{min-width:108px;padding:10px 12px}}
+
+/* A supplied image replaces platform-dependent heart emoji. */
+.brand h1 .may-heart{display:inline-block;width:1.3em;height:1.3em;object-fit:contain;vertical-align:-.22em;filter:drop-shadow(0 2px 2px #86524718)}
+body[data-page=index] .may-welcome h2 .may-heart{display:inline-block;width:28px;height:28px;object-fit:contain;vertical-align:middle}
+@media(max-width:440px){body[data-page=index] .may-welcome h2 .may-heart{width:24px;height:24px}}
