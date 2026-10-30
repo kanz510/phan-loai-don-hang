@@ -196,3 +196,27 @@ body[data-page=orders] .actions .deliver-order .icon{width:16px;height:16px}
 
 /* Soft rose-brown depth for the site wordmark. */
 .brand h1{text-shadow:0 1px 0 #fffaf4,0 2px 3px #86524726,0 5px 10px #b9755d18}
+
+/* A thin moving light on the six dashboard statistics cards only. */
+@property --kem-stat-led-angle{syntax:"<angle>";inherits:false;initial-value:0deg}
+@supports ((mask-composite:exclude) or (-webkit-mask-composite:xor)){
+ body[data-page=index] #stats>.card{--kem-led-tail:#eda574;--kem-led-head:#fff5cf}
+ body[data-page=index] #stats>.card:nth-child(3){--kem-led-tail:#62bb9a;--kem-led-head:#effff4}
+ body[data-page=index] #stats>.card[data-stat=cancelled]{--kem-led-tail:#e39595;--kem-led-head:#fff1ed}
+ body[data-page=index] #stats>.card[data-stat=commission]{--kem-led-tail:#d5a254;--kem-led-head:#fff4c4}
+ body[data-page=index] #stats>.card::after{
+  content:"";display:block;position:absolute;inset:0;width:auto;height:auto;margin:0;
+  border:0;border-radius:inherit;padding:2px;pointer-events:none;
+  background:conic-gradient(from var(--kem-stat-led-angle),transparent 0deg 255deg,var(--kem-led-tail) 320deg,var(--kem-led-head) 348deg,transparent 360deg);
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude;
+  transform:none;opacity:.9;animation:kem-stat-led-orbit 6s linear infinite;
+ }
+ body[data-page=index] #stats>.card:nth-child(2)::after{animation-delay:-1s}
+ body[data-page=index] #stats>.card:nth-child(3)::after{animation-delay:-2s}
+ body[data-page=index] #stats>.card:nth-child(4)::after{animation-delay:-3s}
+ body[data-page=index] #stats>.card:nth-child(5)::after{animation-delay:-4s}
+ body[data-page=index] #stats>.card:nth-child(6)::after{animation-delay:-5s}
+}
+@keyframes kem-stat-led-orbit{to{--kem-stat-led-angle:360deg}}
+@media(prefers-reduced-motion:reduce){body[data-page=index] #stats>.card::after{animation:none;opacity:.5}}
