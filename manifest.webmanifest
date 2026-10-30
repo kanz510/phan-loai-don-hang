@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Kem & May – Quản lý đơn hàng",
+  "short_name": "Kem & May",
+  "lang": "vi",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff5f0",
+  "theme_color": "#fff5f0",
+  "icons": [
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

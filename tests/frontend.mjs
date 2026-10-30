@@ -5,6 +5,17 @@ const root=new URL('../',import.meta.url);
 const read=p=>fs.readFileSync(new URL(p,root),'utf8');
 const scripts=['app-utils.js','app-auth.js','app-stats.js','app-orders.js','app-form.js','app.js'];
 for(const p of scripts)new vm.Script(read(p),{filename:p});
+const manifest=JSON.parse(read('manifest.webmanifest'));
+assert.equal(manifest.display,'standalone');
+for(const page of ['index.html','orders.html','order.html','account.html']){
+ const html=read(page);
+ assert(html.includes('rel="manifest" href="manifest.webmanifest"'));
+ assert(html.includes('name="apple-mobile-web-app-capable" content="yes"'));
+ const base=new URL('https://example.test/phan-loai-don-hang/manifest.webmanifest');
+ const scope=new URL(manifest.scope,base);
+ assert(new URL(page,base).href.startsWith(scope.href));
+ assert(new URL(manifest.start_url,base).href.startsWith(scope.href));
+}
 const token='{{ site.github.build_revision | slice: 0, 8 }}';
 for(const p of ['index.html','orders.html','order.html','account.html']){
  const html=read(p);
