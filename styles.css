@@ -220,3 +220,28 @@ body[data-page=orders] .actions .deliver-order .icon{width:16px;height:16px}
 }
 @keyframes kem-stat-led-orbit{to{--kem-stat-led-angle:360deg}}
 @media(prefers-reduced-motion:reduce){body[data-page=index] #stats>.card::after{animation:none;opacity:.5}}
+
+/* Dashboard welcome banner: approved rose palette and gently swaying photo. */
+body[data-page=index] .dashboard .may-welcome{display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:18px;align-items:center;padding:16px 22px;background:#ef9996;border-color:#e78e8c;border-radius:24px;box-shadow:0 5px 18px #b86b6218;overflow:hidden}
+body[data-page=index] .dashboard .may-welcome::after{display:none}
+body[data-page=index] .may-welcome .may-welcome-brand{display:flex;align-items:center;gap:7px;margin-bottom:14px;font-size:10px;font-weight:500;letter-spacing:.22em;color:#355f51}
+body[data-page=index] .may-welcome-brand::before{content:"";width:5px;height:5px;border-radius:50%;background:#f28076;box-shadow:0 0 0 3px #ffb6af33}
+body[data-page=index] .may-welcome h2{font-family:"Dancing Script","Segoe Script",cursive;font-size:38px;font-weight:500;line-height:1.15;letter-spacing:0;margin:0 0 16px;color:#68443d;text-shadow:0 1px 0 #ffd6cf66}
+body[data-page=index] .may-welcome h2 span{font-family:system-ui,sans-serif;font-size:21px;vertical-align:middle;white-space:nowrap}
+body[data-page=index] .may-welcome p{margin:0;font-size:12px;line-height:1.7;color:#684c43}
+body[data-page=index] #mayWeekday{color:#355f51;font-weight:500}
+body[data-page=index] .may-welcome-photo{margin:0;padding:5px 5px 0;background:#ffdad5;border-radius:17px;box-shadow:0 10px 20px #8c494433,0 2px 6px #8c49441a;transform-origin:50% 15%;animation:may-welcome-sway 5s ease-in-out infinite}
+body[data-page=index] .may-welcome-photo img{display:block;width:100%;height:140px;object-fit:cover;object-position:50% 36%;border-radius:14px}
+body[data-page=index] .may-welcome-photo figcaption{text-align:center;padding:7px 2px 8px;font:italic 12px Georgia,"Times New Roman",serif;color:#307d6c}
+@keyframes may-welcome-sway{0%,100%{transform:translateX(-4px) rotate(-3deg)}50%{transform:translateX(4px) rotate(3deg)}}
+@media(max-width:440px){
+ body[data-page=index] .dashboard .may-welcome{grid-template-columns:minmax(0,1fr) 100px;gap:12px;padding:14px 16px;border-radius:22px}
+ body[data-page=index] .may-welcome h2{font-size:30px;line-height:1.18;margin-bottom:10px}
+ body[data-page=index] .may-welcome h2 span{font-size:17px}
+ body[data-page=index] .may-welcome .may-welcome-brand{font-size:9px;letter-spacing:.17em;margin-bottom:12px}
+ body[data-page=index] .may-welcome p{font-size:11px}
+ body[data-page=index] .may-welcome-photo{padding:4px 4px 0;border-radius:15px}
+ body[data-page=index] .may-welcome-photo img{height:126px;border-radius:12px}
+ body[data-page=index] .may-welcome-photo figcaption{font-size:11px;padding:7px 0}
+}
+@media(prefers-reduced-motion:reduce){body[data-page=index] .may-welcome-photo{animation:none;transform:rotate(2deg)}}
