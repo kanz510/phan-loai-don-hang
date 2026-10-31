@@ -1,4 +1,4 @@
-function updateListUrl(){if(page!=='orders')return;const query=new URLSearchParams();if($('q').value)query.set('q',$('q').value);if($('fSort').value!=='newest')query.set('sort',$('fSort').value);if($('fDel').value!=='all')query.set('del',$('fDel').value);appendDateParams(query);if(currentPage>1)query.set('page',currentPage);history.replaceState(null,'','orders.html'+(query.size?'?'+query:''));if($('addOrder'))$('addOrder').href='order.html?returnTo='+encodeURIComponent(listRoute());}
+function updateListUrl(){if(page!=='orders')return;const query=new URLSearchParams();if($('q').value)query.set('q',$('q').value);if($('fSort').value!=='newest')query.set('sort',$('fSort').value);if($('fDel').value!=='all')query.set('del',$('fDel').value);if(unreceivedCommissionOnly)query.set('commission','unreceived');appendDateParams(query);if(currentPage>1)query.set('page',currentPage);history.replaceState(null,'','orders.html'+(query.size?'?'+query:''));if($('addOrder'))$('addOrder').href='order.html?returnTo='+encodeURIComponent(listRoute());}
 
 function dateFilter(){
  if(page!=='orders')return {mode:'all',error:''};
@@ -18,7 +18,7 @@ function compareOrders(a,b,mode='newest'){
  const tie=String(b.id).localeCompare(String(a.id),'en',{numeric:true});
  return (mode==='amount-asc'?a.price-b.price:mode==='amount-desc'?b.price-a.price:0)||dateOrder||tie;
 }
-function filteredOrders(){const q=normalize($('q')?.value||''),fd=$('fDel')?.value||'all';const f=dateFilter();return orders.filter(o=>matchesDate(o,f)&&(fd==='all'||o.del===fd)&&normalize(o.name+' '+o.item).includes(q)).sort((a,b)=>compareOrders(a,b,$('fSort')?.value||'newest'));}
+function filteredOrders(){const q=normalize($('q')?.value||''),fd=$('fDel')?.value||'all';const f=dateFilter();return orders.filter(o=>matchesDate(o,f)&&(!unreceivedCommissionOnly||o.commission===0)&&(fd==='all'||o.del===fd)&&normalize(o.name+' '+o.item).includes(q)).sort((a,b)=>compareOrders(a,b,$('fSort')?.value||'newest'));}
 function cell(row,label,text,className){const td=document.createElement('td');td.dataset.label=label;if(text!==undefined)td.textContent=text;if(className)td.className=className;row.append(td);return td;}
 function renderPagination(totalPages){
  for(const id of ['pagerTop','pagerBottom']){const nav=$(id);nav.replaceChildren();for(const [text,delta,disabled] of [['← Trước',-1,currentPage===1],['Sau →',1,currentPage===totalPages]]){const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=text;button.disabled=disabled;button.addEventListener('click',()=>{currentPage+=delta;render();document.querySelector('.order-list').scrollIntoView({block:'start'});const buttons=$('pagerTop').querySelectorAll('button');const target=buttons[delta===1?1:0];(target.disabled?buttons[delta===1?0:1]:target).focus({preventScroll:true});});if(delta===1){const status=document.createElement('span');status.textContent=`Trang ${currentPage} / ${totalPages}`;status.setAttribute('aria-live','polite');nav.append(status);}nav.append(button);}}
@@ -26,7 +26,9 @@ function renderPagination(totalPages){
 
 function renderOrderList(list,total){
  if(!$('rows'))return;renderDateFilter();
- for(const chip of document.querySelectorAll('[data-delivery-filter]')){const value=chip.dataset.deliveryFilter;chip.setAttribute('aria-pressed',String(value===$('fDel').value));chip.querySelector('.filter-count').textContent=value==='all'?orders.length:orders.filter(o=>o.del===value).length;}
+ for(const chip of document.querySelectorAll('[data-delivery-filter]')){const value=chip.dataset.deliveryFilter;chip.setAttribute('aria-pressed',String(value===$('fDel').value&&(value!=='all'||!unreceivedCommissionOnly)));chip.querySelector('.filter-count').textContent=value==='all'?orders.length:orders.filter(o=>o.del===value).length;}
+
+ const commissionChip=$('unreceivedCommissionFilter');if(commissionChip){commissionChip.setAttribute('aria-pressed',String(unreceivedCommissionOnly));commissionChip.querySelector('.filter-count').textContent=orders.filter(o=>o.commission===0).length;}
 
  const totalPages=Math.max(1,Math.ceil(list.length/PAGE_SIZE));currentPage=Math.min(Math.max(1,currentPage),totalPages);const start=(currentPage-1)*PAGE_SIZE;const pageOrders=list.slice(start,start+PAGE_SIZE);renderPagination(totalPages);updateListUrl();
  $('resultCount').textContent=`${list.length} / ${orders.length} đơn`;
@@ -60,12 +62,14 @@ function exportCSV(){const rows=[['Tên khách','Hàng mua','Phương thức tha
 function filterChanged(){currentPage=1;render();}
 function initOrderList(){
 initDateFilters();
-if(page==='orders'){$('q').value=params.get('q')||'';if(['newest','oldest','amount-asc','amount-desc'].includes(params.get('sort')))$('fSort').value=params.get('sort');if(DEL.includes(params.get('del')))$('fDel').value=params.get('del');const requestedPage=Number(params.get('page'));currentPage=Number.isSafeInteger(requestedPage)&&requestedPage>0?requestedPage:1;}
+if(page==='orders'){unreceivedCommissionOnly=params.get('commission')==='unreceived';$('q').value=params.get('q')||'';if(['newest','oldest','amount-asc','amount-desc'].includes(params.get('sort')))$('fSort').value=params.get('sort');if(DEL.includes(params.get('del')))$('fDel').value=params.get('del');const requestedPage=Number(params.get('page'));currentPage=Number.isSafeInteger(requestedPage)&&requestedPage>0?requestedPage:1;}
 for(const id of ['fDateMode','fMonth','fYear','fFrom','fTo'])bind(id,'change',filterChanged);
-for(const chip of document.querySelectorAll('[data-delivery-filter]'))chip.addEventListener('click',()=>{$('fDel').value=chip.dataset.deliveryFilter;filterChanged();});
+for(const chip of document.querySelectorAll('[data-delivery-filter]'))chip.addEventListener('click',()=>{$('fDel').value=chip.dataset.deliveryFilter;if(chip.dataset.deliveryFilter==='all')unreceivedCommissionOnly=false;filterChanged();});
+bind('unreceivedCommissionFilter','click',()=>{unreceivedCommissionOnly=!unreceivedCommissionOnly;filterChanged();});
 bind('q','input',filterChanged);for(const id of ['fSort','fDel'])bind(id,'change',filterChanged);
-bind('clearFilters','click',()=>{$('q').value='';$('fSort').value='newest';$('fDel').value='all';$('fDateMode').value='all';$('fMonth').value='';$('fFrom').value='';$('fTo').value='';filterChanged();});
+bind('clearFilters','click',()=>{unreceivedCommissionOnly=false;$('q').value='';$('fSort').value='newest';$('fDel').value='all';$('fDateMode').value='all';$('fMonth').value='';$('fFrom').value='';$('fTo').value='';filterChanged();});
 
 
 bind('exportButton','click',exportCSV);
 }
+

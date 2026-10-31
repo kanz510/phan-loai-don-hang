@@ -156,7 +156,7 @@ body[data-busy=true] #saveButton::after{border-color:#512a2440;border-top-color:
 .more-filters[open] summary::after{content:" ⌃"}.more-filters summary span{font-size:10px;font-weight:500}
 .more-filters .controls{grid-template-columns:1fr 1fr;padding:12px 0 0;border:0;background:transparent}
 .more-filters[open]{flex:1}.more-filters[open]+*{min-width:0}
-body[data-page=orders] .status-filters{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;padding:10px 14px;gap:7px}
+body[data-page=orders] .status-filters{flex-wrap:wrap;overflow:visible;padding:10px 14px;gap:7px}
 body[data-page=orders] .status-filter{flex-shrink:0;white-space:nowrap;min-height:36px;padding:7px 10px;font-size:11px}
 body[data-page=orders] .status-filter .icon{width:13px;height:13px}
 body[data-page=orders] .actions .deliver-order{min-height:40px;padding:9px 13px;font-size:13px;font-weight:750;color:#245c41;background:#d5edda;border:1px solid #add4b7;box-shadow:0 2px 6px #315f4d15}
@@ -375,3 +375,10 @@ body .header-inner .brand h1{max-width:none;white-space:nowrap;text-wrap:nowrap}
 .history-pagination{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px}
 .history-pagination button,#reloadHistory{min-height:36px;padding:8px 10px;font-size:11px}
 @media(max-width:540px){.account-tool-buttons{gap:8px}.account-tool-buttons button{font-size:12px;padding:11px 8px}.account-tool-panel{padding:14px}}
+
+
+/* Show every quick filter without horizontal swiping. */
+body[data-page=orders] .commission-filter{background:#fff0d8;color:#80572e}
+.more-filters .filter-reset{grid-column:1/-1;display:flex;justify-content:flex-end;padding-top:2px}
+.more-filters #clearFilters{min-height:36px;padding:8px 12px;font-size:12px;background:#fff5ee;color:#805449;box-shadow:none}
+body[data-page=orders] .toolbar-actions:has(.pagination:empty){display:none}

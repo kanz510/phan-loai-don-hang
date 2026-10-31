@@ -41,14 +41,14 @@ class Element{
  scrollIntoView(){} focus(){} click(){this.clicked=true;} remove(){} setCustomValidity(){} reportValidity(){return true;}
 }
 const fixture=Array.from({length:39},(_,i)=>({id:String(i+1),version:1,name:i===0?'Ngọc Quỳnh':'Khách '+i,item:'Son Dior',price:i===0?590:340,commission:i,del:i<6?'Chưa giao':'Đã giao',pay:'Chưa rõ',note:'',createdAt:'2026-10-'+String(i%2+29)+'T08:00:00Z'}));
-async function boot(page){
+async function boot(page,search=''){
  const html=read(page+'.html'),nodes={};for(const [,id] of html.matchAll(/id="([^"]+)"/g))nodes[id]=new Element();
  for(const [id,value] of Object.entries({fDateMode:'all',fDel:'all',fSort:'newest',fPayIn:'Chưa rõ',fDelIn:'Chưa rõ',fCommission:'0'}))if(nodes[id])nodes[id].value=value;
  const body=new Element();body.dataset.page=page;let exported;
  const cloud={client:{auth:{onAuthStateChange(){},getSession:async()=>({data:{session:{user:{id:'u',email:'test@example.test'}}}})},channel(){return{on(){return this},subscribe(){return this}}}},member:async()=>({role:'admin'}),list:async()=>fixture};
  const document={body,getElementById:id=>nodes[id]||null,createElement:t=>new Element(t),createElementNS:(_,t)=>new Element(t),createDocumentFragment:()=>new Element(),querySelectorAll:()=>[],querySelector:()=>new Element(),addEventListener(){}};
  const NativeURL=URL;class TestURL extends NativeURL{static createObjectURL(b){exported=b;return 'blob:test';}static revokeObjectURL(){}}
- const ctx={window:{createOrdersCloud:()=>cloud,addEventListener(){}},document,location:{href:'https://example.test/shop/'+page+'.html',search:'',pathname:'/shop/'+page+'.html',assign(){},replace(){}},history:{replaceState(){}},URL:TestURL,URLSearchParams,Intl,Date,Blob,setTimeout:()=>1,clearTimeout(){},setInterval:()=>1,clearInterval(){},console,crypto:{randomUUID:()=> 'test'},confirm:()=>false};
+ const ctx={window:{createOrdersCloud:()=>cloud,addEventListener(){}},document,location:{href:'https://example.test/shop/'+page+'.html'+search,search,pathname:'/shop/'+page+'.html',assign(){},replace(){}},history:{replaceState(_state,_title,url){ctx.lastListUrl=url;}},URL:TestURL,URLSearchParams,Intl,Date,Blob,setTimeout:()=>1,clearTimeout(){},setInterval:()=>1,clearInterval(){},console,crypto:{randomUUID:()=> 'test'},confirm:()=>false};
  vm.createContext(ctx);for(const p of scripts)vm.runInContext(read(p),ctx,{filename:p});
  for(let i=0;i<12;i++)await Promise.resolve();
  return{ctx,nodes,getExport:()=>exported};
@@ -91,3 +91,33 @@ vm.runInContext('dataLoaded=false;render()',extra.ctx);assert.equal(extra.nodes.
 vm.runInContext('dataLoaded=true;authorized=false;render()',extra.ctx);assert.equal(extra.nodes.commissionReminder.hidden,true);
 console.log('PASS: reminder counts zero commission from the full authorized list, updates after changes, handles zero and stays hidden before authorized data loads.');
 
+
+
+// Commission filter combines with the existing read-only filters and URL state.
+fixture.forEach(o=>o.commission=500);
+fixture[0].commission=fixture[1].commission=fixture[2].commission=0;
+fixture[2].del='Đã hủy';
+const filtered=await boot('orders','?commission=unreceived');
+assert.equal(filtered.nodes.resultCount.textContent,'3 / 47 đơn');
+assert.equal(filtered.nodes.unreceivedCommissionFilter['aria-pressed'],'true');
+assert(filtered.ctx.lastListUrl.includes('commission=unreceived'));
+filtered.nodes.fDel.value='Chưa giao';vm.runInContext('filterChanged()',filtered.ctx);
+assert.equal(filtered.nodes.resultCount.textContent,'2 / 47 đơn');
+filtered.nodes.q.value='ngoc quynh';vm.runInContext('filterChanged()',filtered.ctx);
+assert.equal(filtered.nodes.resultCount.textContent,'1 / 47 đơn');
+assert(filtered.ctx.lastListUrl.includes('commission=unreceived'));
+filtered.nodes.q.value='';filtered.nodes.fDel.value='all';filtered.nodes.fDateMode.value='range';filtered.nodes.fFrom.value='2026-10-30';filtered.nodes.fTo.value='2026-10-30';
+vm.runInContext('filterChanged()',filtered.ctx);assert.equal(filtered.nodes.resultCount.textContent,'1 / 47 đơn');
+filtered.nodes.clearFilters.listeners.click();assert.equal(filtered.nodes.resultCount.textContent,'47 / 47 đơn');
+assert.equal(filtered.nodes.unreceivedCommissionFilter['aria-pressed'],'false');assert(!filtered.ctx.lastListUrl.includes('commission='));
+filtered.nodes.unreceivedCommissionFilter.listeners.click();assert.equal(filtered.nodes.resultCount.textContent,'3 / 47 đơn');
+filtered.nodes.unreceivedCommissionFilter.listeners.click();assert.equal(filtered.nodes.resultCount.textContent,'47 / 47 đơn');
+vm.runInContext('exportCSV()',filtered.ctx);assert.equal((await filtered.getExport().text()).split('\r\n').length,48);
+assert.equal(vm.runInContext('orders.length',filtered.ctx),47);
+const listHtml=read('orders.html'),css=read('styles.css');
+assert.equal((listHtml.match(/id="clearFilters"/g)||[]).length,1);
+assert(listHtml.indexOf('id="clearFilters"')>listHtml.indexOf('id="moreFilters"'));
+assert(listHtml.indexOf('id="clearFilters"')<listHtml.indexOf('</details>',listHtml.indexOf('id="moreFilters"')));
+assert(css.includes('body[data-page=orders] .status-filters{flex-wrap:wrap;overflow:visible;'));
+assert(!css.includes('body[data-page=orders] .status-filters{flex-wrap:nowrap'));
+console.log('PASS: zero-commission toggle, URL restore, status/search/date combinations, reset, CSV, no order changes, reset nested in filters and wrapped quick buttons.');
