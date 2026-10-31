@@ -1,0 +1,10 @@
+/* DEMO ONLY — nhánh muse/demo-restyle-faithful, không gộp vào main.
+   Chỉ làm đẹp lớp áo, không đổi bố cục, id, hay logic JS của app gốc.
+   Bảng màu giữ nguyên Peach Boutique của web gốc. */
+:root{--demo-coral:#f28076;--demo-blush:#ffb6af;--demo-cream:#fae0c7}
+body::before{content:"BẢN DEMO — chỉ xem thử, chưa gộp vào main";display:block;text-align:center;padding:8px 12px;background:#ffebe2;color:#704e42;font-size:12px;font-weight:700;border-bottom:1px solid #efd7c8}
+.card,.panel,.quick-action{transition:transform .2s ease,box-shadow .2s ease}
+@media(hover:hover){.card:hover,.quick-action:hover{transform:translateY(-3px);box-shadow:0 12px 28px #855c3c16}}
+button,.button{border-radius:14px}
+.app-nav a[aria-current=page]{background:#ffded6}
+input:focus,select:focus{border-color:#f28076;box-shadow:0 0 0 3px #f2807622}
