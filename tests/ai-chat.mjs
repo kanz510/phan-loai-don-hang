@@ -139,7 +139,7 @@ let coverage=new Map();trackQueryPages(coverage,pages[2]);assert.ok(incompleteRe
 trackQueryPages(coverage,pages[0]);trackQueryPages(coverage,pages[0]);assert.ok(incompleteReply(coverage).includes('73/123')); // no double count
 trackQueryPages(coverage,pages[1]);assert.equal(incompleteReply(coverage),null);
 trackQueryPages(coverage,queryOrders(manyRows,{...pagingFilters,delivery:['Chưa giao']}));assert.ok(incompleteReply(coverage)); // independent query coverage
-for(const offset of [-1,1.5,'50',null,10001])assert.throws(()=>queryOrders(rows,{...defaults,group_offset:offset}));
+for(const offset of [-1,1.5,'50',10001])assert.throws(()=>queryOrders(rows,{...defaults,group_offset:offset}));
 assert.equal(queryOrders(manyRows.slice(0,48),pagingFilters).groups_truncated,false);
 assert.equal(queryOrders(manyRows.slice(0,48),pagingFilters).details_truncated,false);
 // End-to-end: do not publish a provider's false comparison if it stops after a partial page.
@@ -168,3 +168,5 @@ const completeHandler=createHandler({env:n=>({SUPABASE_URL:'https://db.test',SUP
 }});
 response=await completeHandler(req());assert.equal(response.status,200);const completeAnswer=await response.json();assert.equal(completeAnswer.incomplete_details,undefined);assert.ok(completeAnswer.reply.startsWith('Đã đối chiếu đủ'));
 console.log('PASS multi-round handler pagination completes before final answer.');
+
+assert.equal(queryOrders(rows,{...defaults,group_offset:null,detail_offset:null}).count,3);
