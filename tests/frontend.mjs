@@ -82,11 +82,11 @@ console.log('PASS: 47 fixture orders retain order-value and commission totals.')
 
 
 assert.equal(extra.nodes.commissionReminder.hidden,false);
-assert.equal(extra.nodes.commissionReminderText.textContent,'May ơi, còn 1 đơn chưa nhận hoa hồng nhé!!!');
+assert.equal(extra.nodes.commissionReminderCount.textContent,'1 đơn');
 vm.runInContext("orders.forEach((order,index)=>order.commission=index<2?0:500);orders[1].del='Đã hủy';renderStats([],0)",extra.ctx);
-assert.equal(extra.nodes.commissionReminderText.textContent,'May ơi, còn 2 đơn chưa nhận hoa hồng nhé!!!');
+assert.equal(extra.nodes.commissionReminderCount.textContent,'2 đơn');
 vm.runInContext('orders.forEach(order=>order.commission=500);render()',extra.ctx);
-assert.equal(extra.nodes.commissionReminderText.textContent,'May ơi, còn 0 đơn chưa nhận hoa hồng nhé!!!');
+assert.equal(extra.nodes.commissionReminderCount.textContent,'0 đơn');
 vm.runInContext('dataLoaded=false;render()',extra.ctx);assert.equal(extra.nodes.commissionReminder.hidden,true);
 vm.runInContext('dataLoaded=true;authorized=false;render()',extra.ctx);assert.equal(extra.nodes.commissionReminder.hidden,true);
 console.log('PASS: reminder counts zero commission from the full authorized list, updates after changes, handles zero and stays hidden before authorized data loads.');

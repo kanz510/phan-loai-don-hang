@@ -12,8 +12,8 @@ function renderStats(list,total){
   $('commissionReminder').hidden=!authorized||!dataLoaded;
   if(authorized&&dataLoaded){
    const count=orders.filter(order=>order.commission===0).length;
-   const text=`May ơi, còn ${count} đơn chưa nhận hoa hồng nhé!!!`;
-   if($('commissionReminderText').textContent!==text)$('commissionReminderText').textContent=text;
+   const text=`${count} đơn`;
+   if($('commissionReminderCount').textContent!==text)$('commissionReminderCount').textContent=text;
   }
  }
  const delivered=orders.filter(o=>o.del==='Đã giao').length,undelivered=orders.filter(o=>o.del==='Chưa giao').length,cancelled=orders.filter(o=>o.del==='Đã hủy').length,unknown=orders.length-delivered-undelivered-cancelled;

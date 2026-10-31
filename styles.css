@@ -346,3 +346,9 @@ body .header-inner .brand h1{max-width:none;white-space:nowrap;text-wrap:nowrap}
 .commission-reminder-heart{display:block;width:22px;height:22px;object-fit:contain;flex-shrink:0}
 @media(max-width:540px){.commission-reminder{font-size:12px;padding:12px;margin-top:15px}.commission-reminder-heart{width:20px;height:20px}}
 
+
+/* Narrow reminder with a clear numeric emphasis. */
+.commission-reminder{width:fit-content;max-width:calc(100% - 32px);margin:18px auto 0;padding:10px 13px;font-weight:700}
+#commissionReminderText{min-width:0}
+#commissionReminderCount{font-size:1.25em;line-height:1.35;color:#a74359;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
+@media(max-width:540px){.commission-reminder{max-width:calc(100% - 24px);margin:15px auto 0;padding:10px 12px}}
