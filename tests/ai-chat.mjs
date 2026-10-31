@@ -121,3 +121,50 @@ assert.equal(queryOrders(rows,{...defaults,delivery:[' ĐÃ GIAO ']}).count,1);
 groqStatus=400;groqErrorCode='tool_use_failed';routeCalls.length=0;response=await primaryHandler(req());assert.equal(response.status,200);assert.deepEqual(routeCalls,['groq','xkiro','xkiro']);groqStatus=200;groqErrorCode=null;
 assert.ok(routeLogs.some(e=>e.event==='order_chat_provider_tool_error'&&e.code==='tool_use_failed'));
 console.log('PASS Groq canonical tool schema and fallback only for recognized tool-generation errors.');
+
+
+// More than the old 20 groups/5 details, and more than one new page.
+const {trackQueryPages,incompleteReply}=await import('../supabase/functions/order-chat/core.mjs');
+const manyRows=Array.from({length:123},(_,i)=>row(i,{customer_name:'Khách '+i,commission_amount:String(i),amount_k:'340'}));
+const pagingFilters={...defaults,group_by:'customer',include_details:true};
+const pages=[0,50,100].map(offset=>queryOrders(manyRows,{...pagingFilters,group_offset:offset,detail_offset:offset}));
+assert.deepEqual(pages.map(p=>p.groups.length),[50,50,23]);
+assert.deepEqual(pages.map(p=>p.orders.length),[50,50,23]);
+assert.deepEqual(pages.map(p=>p.groups_page.next_offset),[50,100,null]);
+assert.deepEqual(pages.map(p=>p.orders_page.next_offset),[50,100,null]);
+for(const p of pages){assert.equal(p.count,123);assert.equal(p.active_order_value_vnd,'41820000');assert.equal(p.received_commission_vnd,'7503');assert.equal(p.totals_scope,'all_matching_orders');}
+assert.equal(new Set(pages.flatMap(p=>p.orders.map(o=>o.id))).size,123);
+assert.equal(new Set(pages.flatMap(p=>p.groups.map(g=>g.label))).size,123);
+let coverage=new Map();trackQueryPages(coverage,pages[2]);assert.ok(incompleteReply(coverage).includes('23/123')); // last page alone is not complete
+trackQueryPages(coverage,pages[0]);trackQueryPages(coverage,pages[0]);assert.ok(incompleteReply(coverage).includes('73/123')); // no double count
+trackQueryPages(coverage,pages[1]);assert.equal(incompleteReply(coverage),null);
+trackQueryPages(coverage,queryOrders(manyRows,{...pagingFilters,delivery:['Chưa giao']}));assert.ok(incompleteReply(coverage)); // independent query coverage
+for(const offset of [-1,1.5,'50',null,10001])assert.throws(()=>queryOrders(rows,{...defaults,group_offset:offset}));
+assert.equal(queryOrders(manyRows.slice(0,48),pagingFilters).groups_truncated,false);
+assert.equal(queryOrders(manyRows.slice(0,48),pagingFilters).details_truncated,false);
+// End-to-end: do not publish a provider's false comparison if it stops after a partial page.
+let pageRequests=0;
+const pagedHandler=createHandler({env:n=>({SUPABASE_URL:'https://db.test',SUPABASE_ANON_KEY:'public-key',XKIRO_API_KEY:'test'}[n]),now:()=>fastClock,log:()=>{},fetchImpl:async(url,options={})=>{
+ if(url.includes('/orders?'))return new Response(JSON.stringify(manyRows));
+ if(url.includes('/chat/completions')){
+  const body=JSON.parse(options.body);pageRequests++;
+  return new Response(JSON.stringify({choices:[{message:pageRequests===1?{tool_calls:[{id:'page',type:'function',function:{name:'query_orders',arguments:JSON.stringify(pagingFilters)}}]}:{content:'Kết luận sai: chỉ có 50 đơn, tổng 17.000.000đ.'}}]}));
+ }
+ return fetchImpl(url,options);
+}});
+response=await pagedHandler(req());assert.equal(response.status,200);const guarded=await response.json();assert.equal(guarded.incomplete_details,true);assert.ok(guarded.reply.includes('123 đơn'));assert.ok(guarded.reply.includes('41.820.000đ'));assert.ok(!guarded.reply.includes('Kết luận sai'));
+console.log('PASS complete pagination: 123 groups/orders, exact full totals on every page, no duplicates, missing/overlap/independent coverage, offset validation, 48-order single page and incomplete-answer server guard.');
+// The model can read all three pages in successive tool rounds, then answer normally.
+let nextPage=0;
+const completeHandler=createHandler({env:n=>({SUPABASE_URL:'https://db.test',SUPABASE_ANON_KEY:'public-key',XKIRO_API_KEY:'test'}[n]),now:()=>fastClock,log:()=>{},fetchImpl:async(url,options={})=>{
+ if(url.includes('/orders?'))return new Response(JSON.stringify(manyRows));
+ if(url.includes('/chat/completions')){
+  const body=JSON.parse(options.body);
+  const message=nextPage<3?{tool_calls:[{id:'page'+nextPage,type:'function',function:{name:'query_orders',arguments:JSON.stringify({...pagingFilters,group_offset:nextPage*50,detail_offset:nextPage++*50})}}]}:{content:'Đã đối chiếu đủ 123 đơn, tổng giá trị 41.820.000đ.'};
+  if(body.messages.at(-1).role==='tool'&&JSON.parse(body.messages.at(-1).content).orders_page.offset===100)assert.equal(JSON.parse(body.messages.at(-1).content).orders_page.next_offset,null);
+  return new Response(JSON.stringify({choices:[{message}]}));
+ }
+ return fetchImpl(url,options);
+}});
+response=await completeHandler(req());assert.equal(response.status,200);const completeAnswer=await response.json();assert.equal(completeAnswer.incomplete_details,undefined);assert.ok(completeAnswer.reply.startsWith('Đã đối chiếu đủ'));
+console.log('PASS multi-round handler pagination completes before final answer.');
