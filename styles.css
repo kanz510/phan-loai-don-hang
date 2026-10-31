@@ -340,3 +340,9 @@ button.account-logout{width:100%;background:#ffded6;color:#704e42;border-color:#
 .header-inner .brand>div:last-child{min-width:0}
 body .header-inner .brand h1{max-width:none;white-space:nowrap;text-wrap:nowrap}
 @media(max-width:360px){body .header-inner .brand h1{font-size:11px;letter-spacing:.025em}}
+
+/* Read-only reminder based on the same authorized order list as the totals. */
+.commission-reminder{display:flex;align-items:center;justify-content:center;gap:7px;margin:18px 0 0;padding:13px 15px;background:#ffebe2;border:1px solid #efd2c5;border-radius:15px;color:#805449;font-size:13px;line-height:1.6;text-align:center;box-shadow:0 3px 12px #86524708}
+.commission-reminder-heart{display:block;width:22px;height:22px;object-fit:contain;flex-shrink:0}
+@media(max-width:540px){.commission-reminder{font-size:12px;padding:12px;margin-top:15px}.commission-reminder-heart{width:20px;height:20px}}
+
