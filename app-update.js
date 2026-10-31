@@ -20,8 +20,8 @@
   location.replace(target.href);
  }
  button.addEventListener('click',()=>applyUpdate(true));
- document.addEventListener('input',event=>{if(event.target.closest('#orderForm,#loginForm'))formChanged=true;});
- document.addEventListener('change',event=>{if(event.target.closest('#orderForm,#loginForm'))formChanged=true;});
+ document.addEventListener('input',event=>{if(event.target.closest('#orderForm,#loginForm,#changePasswordForm'))formChanged=true;});
+ document.addEventListener('change',event=>{if(event.target.closest('#orderForm,#loginForm,#changePasswordForm'))formChanged=true;});
  async function check(){
   if(document.hidden||checking||Date.now()-lastCheck<15000)return;
   checking=true;lastCheck=Date.now();
@@ -43,3 +43,4 @@
  window.addEventListener('online',check);
  check();
 })();
+

@@ -10,13 +10,13 @@ async function refreshOrders({silent=false}={}){
 function stopSync(){clearInterval(pollTimer);pollTimer=null;if(channel){cloud.client.removeChannel(channel);channel=null;}}
 async function applySession(session){
  const user=session?.user||null;if(!user&&!activeUser&&authEpoch>0)return;if(user&&authorized&&activeUser?.id===user.id)return;
- const epoch=++authEpoch;stopSync();authorized=false;activeUser=user;orders=[];dataLoaded=false;editorReady=false;editId=null;editVersion=null;if($('rows'))$('rows').replaceChildren();render();
+ const epoch=++authEpoch;window.accountToolsReset?.();stopSync();authorized=false;activeUser=user;orders=[];dataLoaded=false;editorReady=false;editId=null;editVersion=null;if($('rows'))$('rows').replaceChildren();render();
  if($('sharedApp'))$('sharedApp').hidden=true;if($('accessPanel'))$('accessPanel').hidden=false;
  if($('logoutButton'))$('logoutButton').hidden=!user;setText('accountEmail',user?.email||'');
  if(!user){if(page!=='account'){location.replace(loginRoute());return;}setText('authStatus',window.cloudStartupError||'Nhập tài khoản do chủ cửa hàng cấp.');$('authPanel').hidden=false;$('accountDetails').hidden=true;return;}
  setText('authStatus','Đang kiểm tra quyền truy cập…');
  try{const member=await cloud.member();if(epoch!==authEpoch)return;authorized=true;
- if(page==='account'){$('authPanel').hidden=true;$('accountDetails').hidden=false;setText('memberEmail',user.email);setText('memberRole',member.role==='admin'?'Vai trò: Chủ cửa hàng':'Vai trò: Nhân viên');const next=safeRoute(params.get('next')||'index.html',['index.html','orders.html','order.html'],'index.html');$('accountContinue').href=next;if(params.has('next')){location.replace(next);return;}await refreshOrders({silent:true});return;}
+ if(page==='account'){$('authPanel').hidden=true;$('accountDetails').hidden=false;setText('memberEmail',user.email);setText('accountGreeting',member.role==='admin'?'Chào Admin':'Chào '+(user.email||'bạn').split('@')[0]);const next=safeRoute(params.get('next')||'index.html',['index.html','orders.html','order.html'],'index.html');$('accountContinue').href=next;if(params.has('next')){location.replace(next);return;}await refreshOrders({silent:true});return;}
  $('accessPanel').hidden=true;$('sharedApp').hidden=false;await refreshOrders();if(epoch!==authEpoch)return;
  channel=cloud.client.channel('shared-orders').on('postgres_changes',{event:'*',schema:'public',table:'orders'},()=>{if(!busy)refreshOrders({silent:true});}).subscribe();
  pollTimer=setInterval(()=>{if(!document.hidden&&!busy)refreshOrders({silent:true});},15000);
@@ -36,4 +36,5 @@ bind('refreshButton','click',()=>refreshOrders());
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!busy&&page!=='account')refreshOrders({silent:true});});
 
 }
+
 

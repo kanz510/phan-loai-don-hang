@@ -30,8 +30,10 @@ window.createOrdersCloud = function (url, publicKey) {
       commissionAvailable=useCommission;
       return rows.map(toApp);
     },
+    async history(start=0,limit=20) { return check(await client.from('order_history').select('id,order_id,action,actor_email,recorded_at,before_data,after_data').order('id',{ascending:false}).range(start,start+limit-1)); },
     async insert(order) { return toApp(check(await client.from('orders').insert(toRow(order)).select(columns()).single())); },
     async update(order, version) { const data=check(await client.from('orders').update(toRow(order)).eq('id',order.id).eq('version',version).select(columns())); if(data.length!==1)throw new Error('Đơn đã được người khác sửa hoặc xóa. Nội dung nhập vẫn được giữ; hãy tải lại danh sách và mở lại đơn để đối chiếu.'); return toApp(data[0]); },
     async remove(order) { const data=check(await client.from('orders').delete().eq('id',order.id).eq('version',order.version).select('id')); if(data.length!==1)throw new Error('Đơn đã thay đổi hoặc bị xóa. Hãy tải lại danh sách trước khi thử lại.'); },
   };
 };
+

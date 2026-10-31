@@ -67,7 +67,7 @@ for(const page of ['index','orders','order','account']){
  assert.equal(vm.runInContext('orders.length',ctx),39);
  }
  if(page==='order'){assert.equal(nodes.saveButton.disabled,false);assert.equal(vm.runInContext('editorReady',ctx),true);}
- if(page==='account'){assert.equal(nodes.accountDetails.hidden,false);assert(nodes.syncStatus.textContent.startsWith('Đã đồng bộ'));assert(nodes.refreshButton.listeners.click);assert(nodes.logoutButton.listeners.click);assert.equal(nodes.logoutButton.hidden,false);}
+ if(page==='account'){assert.equal(nodes.accountGreeting.textContent,'Chào Admin');assert.equal(nodes.accountDetails.hidden,false);assert(nodes.syncStatus.textContent.startsWith('Đã đồng bộ'));assert(nodes.refreshButton.listeners.click);assert(nodes.logoutButton.listeners.click);assert.equal(nodes.logoutButton.hidden,false);}
 }
 console.log('PASS: syntax, unified build version, four-page auth/render, 39 fixture orders, search, filter, sorting, pagination, 39-row CSV, add form.');
 
@@ -90,3 +90,4 @@ assert.equal(extra.nodes.commissionReminderCount.textContent,'0 đơn');
 vm.runInContext('dataLoaded=false;render()',extra.ctx);assert.equal(extra.nodes.commissionReminder.hidden,true);
 vm.runInContext('dataLoaded=true;authorized=false;render()',extra.ctx);assert.equal(extra.nodes.commissionReminder.hidden,true);
 console.log('PASS: reminder counts zero commission from the full authorized list, updates after changes, handles zero and stays hidden before authorized data loads.');
+
