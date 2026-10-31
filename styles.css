@@ -382,3 +382,7 @@ body[data-page=orders] .commission-filter{background:#fff0d8;color:#80572e}
 .more-filters .filter-reset{grid-column:1/-1;display:flex;justify-content:flex-end;padding-top:2px}
 .more-filters #clearFilters{min-height:36px;padding:8px 12px;font-size:12px;background:#fff5ee;color:#805449;box-shadow:none}
 body[data-page=orders] .toolbar-actions:has(.pagination:empty){display:none}
+
+/* Keep the existing reminder appearance while making the whole pill a link. */
+a.commission-reminder{text-decoration:none;cursor:pointer}
+a.commission-reminder:focus-visible{outline:2px solid #a74359;outline-offset:4px}
