@@ -17,6 +17,13 @@ for(const page of ['index.html','orders.html','order.html','account.html']){
  assert(new URL(manifest.start_url,base).href.startsWith(scope.href));
 }
 const token='{{ site.github.build_revision | slice: 0, 8 }}';
+const overview=read('index.html'),accountPage=read('account.html');
+assert(!overview.includes('id="logoutButton"'));
+assert(!overview.includes('id="refreshButton"'));
+assert(!overview.includes('id="syncStatus"'));
+for(const id of ['logoutButton','refreshButton','syncStatus'])assert(accountPage.indexOf('id="'+id+'"')>accountPage.indexOf('id="accountDetails"'));
+assert(overview.includes('id="orderSheet"'));
+
 for(const p of ['index.html','orders.html','order.html','account.html']){
  const html=read(p);
  assert(html.startsWith('---\nlayout: null\n---\n'));
@@ -48,7 +55,7 @@ async function boot(page){
 }
 for(const page of ['index','orders','order','account']){
  const {ctx,nodes,getExport}=await boot(page);
- assert.equal(vm.runInContext('orders.length',ctx),page==='account'?0:39);
+ assert.equal(vm.runInContext('orders.length',ctx),39);
  if(page==='index'){assert.equal(nodes.stats.children.length,6);assert.equal(nodes.stats.children[0].children[2].textContent,39);}
  if(page==='orders'){
  assert.equal(nodes.resultCount.textContent,'39 / 39 đơn');assert.equal(nodes.rows.children[0].children.length,10);
@@ -60,6 +67,15 @@ for(const page of ['index','orders','order','account']){
  assert.equal(vm.runInContext('orders.length',ctx),39);
  }
  if(page==='order'){assert.equal(nodes.saveButton.disabled,false);assert.equal(vm.runInContext('editorReady',ctx),true);}
- if(page==='account')assert.equal(nodes.accountDetails.hidden,false);
+ if(page==='account'){assert.equal(nodes.accountDetails.hidden,false);assert(nodes.syncStatus.textContent.startsWith('Đã đồng bộ'));assert(nodes.refreshButton.listeners.click);assert(nodes.logoutButton.listeners.click);assert.equal(nodes.logoutButton.hidden,false);}
 }
 console.log('PASS: syntax, unified build version, four-page auth/render, 39 fixture orders, search, filter, sorting, pagination, 39-row CSV, add form.');
+
+
+fixture.push(...Array.from({length:8},(_,i)=>({...fixture[1],id:'extra-'+i,commission:1000,del:'Đã giao'})));
+const extra=await boot('index');
+assert.equal(vm.runInContext('orders.length',extra.ctx),47);
+assert.equal(extra.nodes.stats.children[0].children[2].textContent,47);
+assert.equal(extra.nodes.stats.children[1].children[2].textContent,new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(16230000));
+assert.equal(extra.nodes.stats.children[5].children[2].textContent,new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(8741));
+console.log('PASS: 47 fixture orders retain order-value and commission totals.');

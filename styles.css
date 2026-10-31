@@ -276,3 +276,61 @@ dialog.order-sheet::backdrop{background:#35231e66;backdrop-filter:blur(5px);-web
 .order-sheet input,.order-sheet select{font-size:16px}
 @keyframes order-sheet-in{from{opacity:0;transform:translateY(35px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:540px){dialog.order-sheet{width:100%;max-height:90dvh;border-radius:24px 24px 0 0}.order-sheet .editor-page form{padding:18px 18px 12px;gap:16px}.order-sheet .editor-page .panel-head{padding:15px 18px}.order-sheet .panel-head h3{font-size:20px}.order-sheet .money-fields{column-gap:14px}}
+
+/* Compact overview; cream pink fills short pages and the overscroll canvas. */
+html{min-height:100%;background:#fff5f0}
+body{min-height:100vh;min-height:100dvh;background-color:#fff5f0}
+body[data-page=index] main{padding-top:14px}
+body[data-page=index] .header-inner{padding-block:16px 12px}
+body[data-page=index] .dashboard .may-welcome{grid-template-columns:minmax(0,1fr) 82px;padding:13px 18px;gap:14px;margin:0 0 14px;border-radius:19px}
+body[data-page=index] .may-welcome .may-welcome-brand{font-size:9px;margin-bottom:6px}
+body[data-page=index] .may-welcome h2{font-size:31px;margin-bottom:6px}
+body[data-page=index] .may-welcome h2 .may-heart{width:23px;height:23px}
+body[data-page=index] .may-welcome p{font-size:11px;line-height:1.45}
+body[data-page=index] .may-welcome-photo{padding:3px 3px 0;border-radius:11px}
+body[data-page=index] .may-welcome-photo img{height:84px;border-radius:8px}
+body[data-page=index] .may-welcome-photo figcaption{font-size:9px;padding:4px 0}
+body[data-page=index] #stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin-top:0}
+body[data-page=index] #stats>.card{padding:13px 14px 11px;border-radius:16px}
+body[data-page=index] #stats>.card>span:not(.stat-icon){font-size:11px;line-height:1.35;max-width:calc(100% - 22px)}
+body[data-page=index] #stats>.card .stat-icon{top:10px;right:10px;width:23px;height:23px;border-radius:8px}
+body[data-page=index] #stats>.card .stat-icon .icon{width:14px;height:14px}
+body[data-page=index] #stats>.card b{font-size:26px;line-height:1.2;margin:7px 0 3px;letter-spacing:-.6px}
+body[data-page=index] #stats>.card:nth-child(2) b,body[data-page=index] #stats>.card[data-stat=commission] b{font-size:22px;letter-spacing:-.7px}
+body[data-page=index] #stats>.card small{font-size:10px;line-height:1.35;max-width:100%}
+body[data-page=index] .section-label{margin:17px 0 10px;font-size:14px}
+body[data-page=index] .quick-actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+body[data-page=index] .quick-action{padding:16px 16px 16px 60px;border-radius:15px;min-height:74px}
+body[data-page=index] .quick-action>.quick-icon{width:30px;height:32px;left:15px;top:18px;border-radius:10px}
+body[data-page=index] .quick-action>.quick-icon .icon{width:17px;height:17px}
+body[data-page=index] .quick-action b{font-size:12px;margin:0 0 4px;padding:0;line-height:1.4}
+body[data-page=index] .quick-action span:not(.quick-icon){font-size:11px;line-height:1.45}
+body[data-page=index] .quick-action>.quick-arrow{display:none}
+.account-sync{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:20px 0;padding:16px 0;border-block:1px solid #efd7c8}
+.account-sync h3{font-size:14px;margin-bottom:8px}
+.account-sync .shared-status{font-size:11px;line-height:1.5;margin:0}
+.account-sync #refreshButton{flex-shrink:0}
+button.account-logout{width:100%;background:#ffded6;color:#704e42;border-color:#efc5ba}
+.account-details #accountContinue{width:100%;margin-top:10px}
+@media(min-width:1100px){body[data-page=index] #stats{grid-template-columns:repeat(6,minmax(0,1fr))}body[data-page=index] .quick-actions{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:600px){
+ body[data-page=index] .header-inner{padding:13px 14px 10px}
+ body[data-page=index] .brand .logo{width:35px;height:35px}
+ body[data-page=index] .brand h1{font-size:12px;max-width:250px;line-height:1.45}
+ body[data-page=index] .app-nav{padding-bottom:10px}
+ body[data-page=index] main{padding:13px 13px 24px}
+ body[data-page=index] .dashboard .may-welcome{grid-template-columns:minmax(0,1fr) 65px;padding:12px 15px;gap:10px;margin:0 0 12px}
+ body[data-page=index] .may-welcome h2{font-size:28px;line-height:1.18}
+ body[data-page=index] .may-welcome-photo img{height:70px}
+ body[data-page=index] .may-welcome-photo figcaption{font-size:8px}
+ body[data-page=index] #stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ body[data-page=index] #stats>.card{padding:11px 12px 10px;border-radius:15px}
+ body[data-page=index] #stats>.card b{font-size:25px;margin:6px 0 3px}
+ body[data-page=index] #stats>.card:nth-child(2) b,body[data-page=index] #stats>.card[data-stat=commission] b{font-size:20px;letter-spacing:-.7px}
+ body[data-page=index] .quick-actions{gap:9px}
+ body[data-page=index] .quick-action{padding:12px 9px 12px 45px;min-height:68px;border-radius:14px}
+ body[data-page=index] .quick-action>.quick-icon{width:27px;height:29px;left:9px;top:16px;border-radius:9px}
+ body[data-page=index] .quick-action b{font-size:11px}
+ body[data-page=index] .quick-action span:not(.quick-icon){font-size:10px}
+}
+@media(max-width:360px){body[data-page=index] #stats>.card{padding:10px}body[data-page=index] #stats>.card:nth-child(2) b,body[data-page=index] #stats>.card[data-stat=commission] b{font-size:18px}body[data-page=index] .may-welcome h2{font-size:25px}}
