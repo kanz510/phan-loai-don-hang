@@ -334,3 +334,9 @@ button.account-logout{width:100%;background:#ffded6;color:#704e42;border-color:#
  body[data-page=index] .quick-action span:not(.quick-icon){font-size:10px}
 }
 @media(max-width:360px){body[data-page=index] #stats>.card{padding:10px}body[data-page=index] #stats>.card:nth-child(2) b,body[data-page=index] #stats>.card[data-stat=commission] b{font-size:18px}body[data-page=index] .may-welcome h2{font-size:25px}}
+
+/* Use the full header width now that account controls live in Account. */
+.header-inner .brand{max-width:100%;width:100%}
+.header-inner .brand>div:last-child{min-width:0}
+body .header-inner .brand h1{max-width:none;white-space:nowrap;text-wrap:nowrap}
+@media(max-width:360px){body .header-inner .brand h1{font-size:11px;letter-spacing:.025em}}
