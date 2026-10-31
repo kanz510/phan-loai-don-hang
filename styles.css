@@ -260,3 +260,19 @@ button.em-kem-toggle[aria-pressed=false]{background:#e5f2ec;color:#315f4d;border
 .brand h1 .may-heart{display:inline-block;width:1.3em;height:1.3em;object-fit:contain;vertical-align:-.22em;filter:drop-shadow(0 2px 2px #86524718)}
 body[data-page=index] .may-welcome h2 .may-heart{display:inline-block;width:28px;height:28px;object-fit:contain;vertical-align:middle}
 @media(max-width:440px){body[data-page=index] .may-welcome h2 .may-heart{width:24px;height:24px}}
+
+/* Add an order without leaving the dashboard. Native dialog traps focus. */
+body.order-sheet-open{overflow:hidden}
+dialog.order-sheet{padding:0;border:0;background:#fffaf6;color:#593e36;width:min(680px,calc(100% - 32px));max-width:none;max-height:88dvh;margin:auto auto 0;border-radius:25px 25px 0 0;box-shadow:0 -10px 45px #593e3626;overflow-y:auto;overscroll-behavior:contain;padding-bottom:env(safe-area-inset-bottom)}
+dialog.order-sheet[open]{animation:order-sheet-in .25s ease-out}
+dialog.order-sheet::backdrop{background:#35231e66;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+.order-sheet .editor-page{max-width:none;border:0;border-radius:0;box-shadow:none;animation:none;background:#fffaf6}
+.order-sheet .editor-page .panel-head{position:sticky;top:0;z-index:1;padding:18px 22px;background:#ffebe2;border-bottom:1px solid #efd7c8}
+.order-sheet .panel-head h3{font-family:inherit;font-size:21px;font-weight:750;color:#68443d}
+.order-sheet .order-sheet-close{min-width:40px;width:40px;min-height:40px;padding:0;font-size:25px;border-radius:50%;background:#fff8f4;border-color:#e9cabc;color:#865247;box-shadow:none}
+.order-sheet .editor-page form{padding:22px;gap:16px}
+.order-sheet .form-actions{flex-direction:row-reverse;position:sticky;bottom:calc(-1 * env(safe-area-inset-bottom));background:#fffaf6;padding:14px 0 4px;margin:0;z-index:1}
+.order-sheet .form-actions #cancelEdit{flex:0 0 auto;min-width:80px}
+.order-sheet input,.order-sheet select{font-size:16px}
+@keyframes order-sheet-in{from{opacity:0;transform:translateY(35px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:540px){dialog.order-sheet{width:100%;max-height:90dvh;border-radius:24px 24px 0 0}.order-sheet .editor-page form{padding:18px 18px 12px;gap:16px}.order-sheet .editor-page .panel-head{padding:15px 18px}.order-sheet .panel-head h3{font-size:20px}.order-sheet .money-fields{column-gap:14px}}

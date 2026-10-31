@@ -14,7 +14,9 @@ jobs:
         with:
           node-version: '22'
       - run: node tests/frontend.mjs
+      - run: node tests/order-sheet.mjs
       - run: |
           for file in app*.js shared-cloud.js order-assistant.js login-assistant.js; do
             node --check "$file" || exit 1
           done
+

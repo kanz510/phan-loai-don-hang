@@ -14,7 +14,7 @@ async function saveOrder(e){e.preventDefault();if(busy||!authorized||!editorRead
  const isEditing=editId!==null;if(isEditing&&!orders.some(x=>x.id===editId)){notify('Đơn này không còn tồn tại. Vui lòng quay lại danh sách.');return;}
  const epoch=authEpoch;const version=editVersion;setBusy(true);let saved;
  try{saved=isEditing?await cloud.update({id,...o},version):await cloud.insert(o);if(epoch!==authEpoch)return;
- refreshSeq++;editorDirty=false;location.assign(listReturn);
+ refreshSeq++;editorDirty=false;if(page==='index'&&window.orderSheetSaved){window.orderSheetSaved();}else{location.assign(listReturn);}
 
  }catch(error){if(epoch===authEpoch)notify('Chưa lưu được. '+(o.del==='Đã hủy'?cancelError(error):errorText(error)));}
  finally{setBusy(false);}
@@ -25,5 +25,6 @@ function initFormBindings(){
 if(page==='order'){$('cancelEdit').href=listReturn;$('backToOrders').href=listReturn;}
 bind('orderForm','submit',saveOrder);for(const id of ['fName','fItem'])bind(id,'input',()=>$(id).setCustomValidity(''));
 bind('orderForm','input',()=>editorDirty=true);bind('orderForm','change',()=>editorDirty=true);
-window.addEventListener('beforeunload',event=>{if(page==='order'&&(busy||editorDirty)){event.preventDefault();event.returnValue='';}});
+window.addEventListener('beforeunload',event=>{if((page==='order'||$('orderSheet')?.open)&&(busy||editorDirty)){event.preventDefault();event.returnValue='';}});
 }
+
