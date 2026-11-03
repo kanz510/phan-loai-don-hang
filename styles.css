@@ -386,3 +386,9 @@ body[data-page=orders] .toolbar-actions:has(.pagination:empty){display:none}
 /* Keep the existing reminder appearance while making the whole pill a link. */
 a.commission-reminder{text-decoration:none;cursor:pointer}
 a.commission-reminder:focus-visible{outline:2px solid #a74359;outline-offset:4px}
+
+/* Wave 1 status controls: shown only when the optional test migration is applied. */
+.wave1-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;min-width:0;padding:12px;border:1px solid #ead1c6;border-radius:14px;background:#fff8f2}
+.wave1-fields[hidden]{display:none!important}
+.wave1-fields .field{min-width:0}
+@media(max-width:540px){.wave1-fields{grid-template-columns:1fr;padding:12px}}
