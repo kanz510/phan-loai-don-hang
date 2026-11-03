@@ -46,6 +46,7 @@ function mock(supportsStatus){
  const valid={...input,id:1,version:1};
  assert.equal(validOrder(valid),true);
  assert.equal(validOrder({...valid,comExpected:20000}),false);
+ assert.equal(validOrder({...valid,comState:'received'}),false);
  assert.equal(validOrder({...valid,comState:'pending'}),false);
  assert.equal(validOrder({...valid,comState:'not_applicable'}),false);
  assert.equal(awaitingCommission(valid),true);
