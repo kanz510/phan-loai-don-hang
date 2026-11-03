@@ -49,6 +49,7 @@
   if(value===undefined||value===null||value==='')return '—';
   if(key==='amount_k')return fmt(Number(value));
   if(key==='commission_amount'||key==='commission_expected')return fmtCommission(Number(value));
+  if(key==='commission_state')return commissionStateLabel(value);
   return String(value);
  }
  function node(tag,text){const element=document.createElement(tag);element.textContent=text;return element;}
