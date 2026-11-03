@@ -11,7 +11,7 @@ function renderStats(list,total){
  if($('commissionReminder')){
   $('commissionReminder').hidden=!authorized||!dataLoaded;
   if(authorized&&dataLoaded){
-   const count=orders.filter(order=>order.commission===0).length;
+   const count=orders.filter(awaitingCommission).length;
    const text=`${count} đơn`;
    if($('commissionReminderCount').textContent!==text)$('commissionReminderCount').textContent=text;
   }
