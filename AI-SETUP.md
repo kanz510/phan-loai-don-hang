@@ -1,17 +1,19 @@
 # Bật chat AI cho May 🫶🏻
 
-Mã đã sẵn sàng. AI chỉ hoạt động sau khi bạn thêm khóa OpenAI và triển khai hàm trên **đúng dự án Supabase đang lưu đơn**. Kết nối GitHub với Supabase không tự thực hiện các bước này. Trong lúc chưa bật, web vẫn dùng **Tra cứu nhanh**.
+Mã hiện tại ưu tiên **Groq**, và có thể dự phòng bằng **xKiro**; không dùng `OPENAI_API_KEY`. AI chỉ hoạt động sau khi thêm khóa hợp lệ và triển khai Edge Function. Trong lúc chưa bật, web vẫn dùng **Tra cứu nhanh**.
 
-## 1. Tạo khóa OpenAI và đặt giới hạn chi tiêu
+> **Nhánh thử Đợt 1:** tuyệt đối không áp dụng SQL, Edge Function hoặc khóa API này lên Supabase sản xuất khi chưa phê duyệt. Dùng một Supabase test project riêng; xem `WAVE1_TEST.md`.
 
-1. Mở https://platform.openai.com/api-keys và tạo một API key cho dự án của bạn.
-2. Kiểm tra Billing của OpenAI API và đặt ngân sách/cảnh báo phù hợp. Gói ChatGPT Plus/Pro không bao gồm tiền dùng OpenAI API. Dịch vụ tính phí theo lượt xử lý; giới hạn ngân sách/cảnh báo của nhà cung cấp có thể không phải giới hạn cứng.
-3. **Không gửi khóa vào chat, không dán vào GitHub hoặc JavaScript của website.** Bạn chỉ dán khóa vào Supabase Secrets ở bước 3.
+## 1. Chọn nhà cung cấp và thiết lập giới hạn
+
+1. Lấy API key từ Groq cho mô hình mà tài khoản được phép dùng. Có thể thêm xKiro làm nhà cung cấp dự phòng nếu có khóa hợp lệ.
+2. Kiểm tra hạn mức/tính phí của tài khoản nhà cung cấp tương ứng; không mặc định miễn phí hoặc không giới hạn.
+3. **Không gửi khóa vào chat, không dán vào GitHub hoặc JavaScript của website.** Chỉ đặt khóa trong Supabase Edge Function Secrets.
 
 ## 2. Chạy SQL giới hạn số lượt hỏi
 
 1. Mở [supabase-ai-chat.sql](supabase-ai-chat.sql), bấm **Raw**, sao chép toàn bộ.
-2. Mở https://supabase.com/dashboard/project/jsdpdfdyxfxvlxdovnkt/sql/new
+2. Mở SQL Editor trong **Supabase test project** (không phải dự án đang lưu dữ liệu thật).
 3. Dán mã, bấm **Run**. Thấy Success là xong.
 
 Tệp này chỉ thêm bộ đếm lượt AI, **không sửa/xóa đơn hàng**. Có thể chạy lại. Mặc định mỗi tài khoản tối đa **30 câu/ngày**, cả cửa hàng **300 câu/ngày**, cách nhau ít nhất **3 giây/tài khoản**. Ngày tính theo giờ Việt Nam. Lượt gọi thất bại sau khi đã nhận xử lý vẫn tính lượt. Muốn thay mức, sửa số 30/300 trong SQL rồi chạy lại. Bộ đếm chỉ lưu ngày, tài khoản và số lượt, không lưu nội dung chat.
@@ -19,8 +21,9 @@ Tệp này chỉ thêm bộ đếm lượt AI, **không sửa/xóa đơn hàng**
 ## 3. Đặt khóa trong Supabase Secrets
 
 1. Trong dự án Supabase, vào **Edge Functions → Secrets**.
-2. Thêm secret tên chính xác `OPENAI_API_KEY`; giá trị là khóa OpenAI vừa tạo. Bấm Save.
-3. Không bắt buộc: `OPENAI_MODEL` = `gpt-4.1-mini` (mặc định), `APP_ORIGIN` = `https://kanz510.github.io` (mặc định, không có dấu `/` cuối).
+2. Thêm `GROQ_API_KEY` làm khóa chính. Tùy chọn thêm `XKIRO_API_KEY` để dự phòng; cần ít nhất một trong hai.
+3. Model mặc định trong code: `GROQ_MODEL` = `openai/gpt-oss-120b`; `XKIRO_MODEL` = `qwen/qwen3.8-max:free`. Chỉ sửa nếu provider xác nhận model khác khả dụng.
+4. Đặt `APP_ORIGIN` khớp đúng origin của website thử nghiệm. CORS không tự chấp nhận URL xem trước khác domain.
 
 `SUPABASE_URL` và `SUPABASE_ANON_KEY` do môi trường Edge Functions cung cấp sẵn. Hàm **không cần service_role key**.
 
@@ -37,30 +40,30 @@ Hoặc nếu dùng CLI, từ thư mục repository:
 
 ```sh
 supabase login
-supabase link --project-ref jsdpdfdyxfxvlxdovnkt
-supabase functions deploy order-chat --project-ref jsdpdfdyxfxvlxdovnkt --no-verify-jwt
+supabase link --project-ref YOUR_TEST_PROJECT_REF
+supabase functions deploy order-chat --project-ref YOUR_TEST_PROJECT_REF --no-verify-jwt
 ```
 
-Chỉ cần SQL ở bước 2 và lệnh `functions deploy`. Không commit file chứa secret. Không đổi project-ref nếu chưa kiểm tra đúng dự án.
+Chỉ cần SQL ở bước 2 và lệnh `functions deploy`. Không commit file chứa secret. Phải kiểm tra `YOUR_TEST_PROJECT_REF` là dự án thử nghiệm trước khi chạy.
 
 ## 5. Kiểm tra trên website
 
-1. Tải lại https://kanz510.github.io/phan-loai-don-hang/ và đăng nhập.
-2. Mở **Hỏi May**. Khi kết nối thành công, chế độ **AI** được chọn tự động. Có thể chọn bằng tay trong ô Chế độ.
+1. Mở bản preview từ nhánh thử kết nối tới **Supabase test project**, rồi đăng nhập tài khoản thử.
+2. Mở **Em Kem**. Khi kết nối thành công, chế độ **AI** được chọn tự động. Có thể chọn bằng tay trong ô Chế độ.
 3. Thử: “Đơn nào chưa giao mà chưa thanh toán?”, “Hoa hồng tháng này so với tháng trước thế nào?”, rồi hỏi tiếp “Còn năm nay?”.
 4. So sánh phần **Đối chiếu từ hệ thống** dưới câu trả lời với trang Đơn hàng. Bot không có công cụ thay đổi đơn; muốn sửa/hủy vẫn dùng nút trên website.
 
-Nếu báo “AI chưa được triển khai”: kiểm tra tên hàm và bước 4. Nếu báo “AI chưa được kích hoạt”: kiểm tra tên secret ở bước 3. Nếu báo cần `supabase-ai-chat.sql`: chạy bước 2. Nếu hết hạn mức: kiểm tra số lượt hoặc Billing OpenAI. Không cần gửi khóa cho người hỗ trợ.
+Nếu báo “AI chưa được triển khai”: kiểm tra tên hàm và bước 4. Nếu báo “AI chưa được kích hoạt”: kiểm tra tên secret ở bước 3. Nếu báo cần `supabase-ai-chat.sql`: chạy bước 2. Nếu hết hạn mức: kiểm tra quota/RPC và tài khoản Groq/xKiro. Không cần gửi khóa cho người hỗ trợ.
 
 ## Dữ liệu và giới hạn
 
-- Trình duyệt chỉ gửi câu hỏi và tối đa 8 tin nhắn gần nhất, không gửi mảng đơn hoặc khóa OpenAI. Không lưu lịch sử chat trong localStorage; rời trang/đăng xuất/đổi tài khoản sẽ xóa ngữ cảnh. Đổi chế độ bắt đầu ngữ cảnh AI mới.
+- Trình duyệt chỉ gửi câu hỏi và tối đa 8 tin nhắn gần nhất, không gửi mảng đơn hoặc API key. **Bản hiện tại có lưu tối đa 40 tin nhắn giao diện trong localStorage theo tài khoản, tối đa 7 ngày**, để duy trì trò chuyện khi đổi trang. Đăng xuất/đổi tài khoản sẽ đặt lại ngữ cảnh hiện tại.
 - Máy chủ xác minh người dùng bằng Auth, kiểm tra `order_members`, rồi đọc bảng `orders` với JWT của **chính người dùng**. Không dùng quyền quản trị để lấy đơn.
-- OpenAI nhận câu hỏi, ngữ cảnh chat và **kết quả truy vấn cần thiết**: số liệu tổng/nhóm; khi hỏi chi tiết, tối đa 5 đơn với tên khách, mặt hàng, tiền, ngày và trạng thái. Ghi chú chỉ được gửi khi công cụ yêu cầu cho câu hỏi về ghi chú. Nội dung văn bản được giới hạn chiều dài. Việc xử lý/lưu giữ phía nhà cung cấp tuân theo điều khoản và chính sách OpenAI API; `store:false` không đồng nghĩa không có lưu giữ vì mục đích vận hành.
+- Nhà cung cấp AI đang sử dụng (Groq hoặc xKiro) nhận câu hỏi, ngữ cảnh chat và các kết quả tool cần thiết; mỗi trang nhóm/chi tiết tối đa 50 mục. Ghi chú chỉ được gửi khi công cụ yêu cầu. Việc xử lý/lưu giữ dữ liệu theo chính sách của nhà cung cấp thực tế.
 - Chỉ có công cụ đọc với bộ lọc cho phép. Không có công cụ SQL tự do, sửa, hủy, xóa hay thêm đơn. Số liệu tiền được cộng bằng số nguyên trên máy chủ; AI diễn giải và có thể tính toán sai, cần đối chiếu các thẻ số liệu nguồn.
 - Thời gian là **ngày tạo đơn theo Việt Nam**, không có ngày thực giao/nhận hoa hồng riêng. Hoa hồng cộng số thực nhận đã nhập, kể cả đơn hủy. Giá trị đơn chưa hủy không phải lợi nhuận hoặc tiền đã thu.
-- Tối đa 10.000 đơn/lượt. Nếu vượt, hàm báo giới hạn thay vì trả tổng từ dữ liệu thiếu. Nhóm tối đa 20 kết quả, chi tiết tối đa 5 đơn và có đánh dấu cắt bớt. Câu hỏi quá phức tạp cần chia nhỏ; mỗi câu tối đa 4 truy vấn công cụ/3 lượt gọi AI, thời gian máy chủ 40 giây.
-- Chế độ Tra cứu nhanh tiếp tục hoạt động khi AI chưa được bật, hết lượt hoặc lỗi dịch vụ. Không tự chuyển câu hỏi từ Tra cứu nhanh sang OpenAI.
+- Tối đa 10.000 đơn/lượt. Nếu vượt, hàm báo giới hạn thay vì trả tổng từ dữ liệu thiếu. Nhóm và chi tiết phân trang 50 mục/lần. Với câu hỏi **top 1–50**, dùng `group_top` và `group_sort` để lấy xếp hạng chính xác trên toàn bộ đơn khớp lọc mà không cần duyệt hết nhóm. Muốn liệt kê tất cả nhóm vẫn phải phân trang, và nếu không đủ trang Em Kem báo rõ thiếu. Mỗi câu tối đa 4 lượt tool và tối đa 5 vòng AI.
+- Chế độ Tra cứu nhanh tiếp tục hoạt động khi AI chưa được bật, hết lượt hoặc lỗi dịch vụ. Không tự chuyển câu hỏi từ Tra cứu nhanh sang AI trả phí.
 
 ## Kiểm thử cho người phát triển
 
