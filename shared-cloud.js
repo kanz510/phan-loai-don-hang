@@ -4,30 +4,49 @@ window.createOrdersCloud = function (url, publicKey) {
   const client = window.supabase.createClient(url, publicKey);
   const baseColumns = 'id,customer_name,item,amount_k,payment_method,delivery_status,note,version,created_at';
   let commissionAvailable = null;
+  let statusAvailable = null;
+  const statusColumns = ',commission_state,commission_expected,collection_status';
+  const statusSchemaError = error => ['42703','PGRST204'].includes(error?.code) && /commission_state|commission_expected|collection_status/i.test(error?.message||'');
+  const statusMigrationError = () => new Error('Trạng thái mới chưa được kích hoạt: hãy chạy supabase-wave1-status.sql trên cơ sở dữ liệu thử. Nội dung đơn chưa bị thay đổi.');
   const schemaError = error => ['42703','PGRST204'].includes(error?.code) && /commission_amount/i.test(error?.message||'');
   const commissionError = () => new Error('Chưa lưu được hoa hồng: chủ cửa hàng cần chạy tệp supabase-commission.sql trong Supabase rồi tải lại danh sách. Nội dung nhập vẫn được giữ.');
-  const columns = () => baseColumns + (commissionAvailable===false?'':',commission_amount');
-  const toApp = r => ({id:r.id,name:r.customer_name,item:r.item,price:Number(r.amount_k),commission:Number(r.commission_amount??0),createdAt:r.created_at||null,pay:r.payment_method,del:r.delivery_status,note:r.note||'',version:r.version});
+  const columns = () => baseColumns + (commissionAvailable===false?'':',commission_amount') + (statusAvailable===false?'':statusColumns);
+  const toApp = r => { const commission=Number(r.commission_amount??0);return {id:r.id,name:r.customer_name,item:r.item,price:Number(r.amount_k),commission,comState:r.commission_state??(commission>0?'received':'pending'),comExpected:r.commission_expected==null?null:Number(r.commission_expected),collection:r.collection_status??(r.payment_method==='Chưa thanh toán'?'Chưa thu':'Chưa rõ'),createdAt:r.created_at||null,pay:r.payment_method,del:r.delivery_status,note:r.note||'',version:r.version};};
   const toRow = o => {
     const row={customer_name:o.name,item:o.item,amount_k:o.price,payment_method:o.pay,delivery_status:o.del,note:o.note||''};
     const commission=o.commission??0;
     if(commissionAvailable===false){if(commission!==0)throw commissionError();}
     else row.commission_amount=commission;
+    if(statusAvailable===false){
+      const inferredState=commission>0?'received':'pending';
+      const inferredCollection=o.pay==='Chưa thanh toán'?'Chưa thu':'Chưa rõ';
+      if(o.comState!==undefined&&(o.comState!==inferredState||o.comExpected!=null||o.collection!==inferredCollection))throw statusMigrationError();
+    }else{
+      row.commission_state=o.comState??(commission>0?'received':'pending');
+      row.commission_expected=o.comExpected??null;
+      row.collection_status=o.collection??'Chưa rõ';
+    }
     return row;
   };
   function check(result) { if (result.error) {if(schemaError(result.error))throw commissionError();throw result.error;} return result.data; }
   return {
     client,
+    statusEnabled: () => statusAvailable===true,
     async member() { const data=check(await client.from('order_members').select('user_id,role').maybeSingle()); if(!data)throw new Error('Tài khoản chưa được cấp quyền quản lý đơn. Vui lòng liên hệ chủ cửa hàng.'); return data; },
     async list() {
       // Probe each refresh so applying the migration activates the field without signing out.
-      const rows=[];let useCommission=true;
+      const rows=[];let useCommission=true,useStatus=true;
       for(let start=0;;start+=500){
-        let result=await client.from('orders').select(baseColumns+(useCommission?',commission_amount':'')).order('created_at',{ascending:false}).order('id',{ascending:false}).range(start,start+499);
-        if(start===0&&result.error&&schemaError(result.error)){useCommission=false;result=await client.from('orders').select(baseColumns).order('created_at',{ascending:false}).order('id',{ascending:false}).range(start,start+499);}
+        let result;
+        while(true){
+          result=await client.from('orders').select(baseColumns+(useCommission?',commission_amount':'')+(useStatus?statusColumns:'')).order('created_at',{ascending:false}).order('id',{ascending:false}).range(start,start+499);
+          if(start===0&&result.error&&statusSchemaError(result.error)&&useStatus){useStatus=false;continue;}
+          if(start===0&&result.error&&schemaError(result.error)&&useCommission){useCommission=false;continue;}
+          break;
+        }
         const batch=check(result);rows.push(...batch);if(batch.length<500)break;
       }
-      commissionAvailable=useCommission;
+      commissionAvailable=useCommission;statusAvailable=useStatus;
       return rows.map(toApp);
     },
     async history(start=0,limit=20) { return check(await client.from('order_history').select('id,order_id,action,actor_email,recorded_at,before_data,after_data').order('id',{ascending:false}).range(start,start+limit-1)); },
