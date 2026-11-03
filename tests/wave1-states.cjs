@@ -17,7 +17,7 @@ function mock(supportsStatus){
     if(!supportsStatus&&cols.includes('commission_state'))return {data:null,error:{code:'42703',message:'column orders.commission_state does not exist'}};
     return {data:[{...row,...(supportsStatus?{commission_state:'partial',commission_expected:90000,collection_status:'Đã thu'}:{})}],error:null};
    }};},
-   insert(payload){lastWrite=payload;return {select(){return {async single(){return {data:{...row,...payload},error:null}};}}};}
+   insert(payload){lastWrite=payload;return {select(){return {single:async()=>({data:{...row,...payload},error:null})};}};}
   };
  }};
  const win={supabase:{createClient:()=>client}};
