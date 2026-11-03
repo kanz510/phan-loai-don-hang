@@ -14,6 +14,7 @@
    if(!authorized||!dataLoaded)return;
    event.preventDefault();opener=link;
    form.reset();editId=null;editVersion=null;editorDirty=false;editorReady=true;
+   advancedOrderFields();
    $('dialogNotice').hidden=true;$('saveButton').disabled=false;
    sheet.showModal();document.body.classList.add('order-sheet-open');
   });
