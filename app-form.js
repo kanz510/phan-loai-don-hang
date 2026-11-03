@@ -18,7 +18,7 @@ async function saveOrder(e){e.preventDefault();if(busy||!authorized||!editorRead
   pay,del:$('fDelIn').value,note:$('fNote').value.trim()};
  for(const id of ['fName','fItem']){const input=$(id);input.setCustomValidity(input.value.trim()?'':'Vui lòng nhập nội dung, không chỉ khoảng trắng.');if(!input.reportValidity())return;}
  const id=editId??crypto.randomUUID();if(!validOrder({id,version:editVersion??1,...o})||$('fPrice').value.trim()===''){notify('Kiểm tra số tiền và trạng thái hoa hồng: chưa nhận/không áp dụng cần số đã nhận bằng 0; nhận một phần cần nhập số dự kiến lớn hơn số đã nhận; đã nhận đủ cần số lớn hơn 0.');return;}
- if(advanced&&pay==='Chưa thanh toán'&&o.collection==='Đã thu'){notify('Hình thức “Chưa thanh toán” (cũ) không thể đi cùng trạng thái “Đã thu”. Hãy chọn hình thức phù hợp.');return;}
+ if(advanced&&pay==='Chưa thanh toán'&&!['Chưa thu','Chưa rõ'].includes(o.collection)){notify('Hình thức “Chưa thanh toán” (cũ) không phù hợp với trạng thái đã thu tiền. Hãy chọn hình thức CK, COD hoặc tiền mặt.');return;}
  const isEditing=editId!==null;if(isEditing&&!orders.some(x=>x.id===editId)){notify('Đơn này không còn tồn tại. Vui lòng quay lại danh sách.');return;}
  const epoch=authEpoch;const version=editVersion;setBusy(true);let saved;
  try{saved=isEditing?await cloud.update({id,...o},version):await cloud.insert(o);if(epoch!==authEpoch)return;
