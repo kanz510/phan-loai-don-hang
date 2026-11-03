@@ -4,13 +4,17 @@ begin;
 create table if not exists public.order_history (
  id bigint generated always as identity primary key,
  order_id text not null,
- action text not null check (action in ('INSERT','UPDATE')),
+ action text not null check (action in ('INSERT','UPDATE','DELETE')),
  actor_id uuid references auth.users(id) on delete set null,
  actor_email text,
  recorded_at timestamptz not null default clock_timestamp(),
  before_data jsonb,
- after_data jsonb not null
+ after_data jsonb
 );
+-- Upgrade in place; keep all existing audit records.
+alter table public.order_history drop constraint if exists order_history_action_check;
+alter table public.order_history add constraint order_history_action_check check (action in ('INSERT','UPDATE','DELETE'));
+alter table public.order_history alter column after_data drop not null;
 alter table public.order_history enable row level security;
 revoke all on public.order_history from public, anon, authenticated;
 grant select on public.order_history to authenticated;
@@ -23,14 +27,15 @@ create or replace function public.record_order_history() returns trigger
 language plpgsql security definer set search_path = '' as $$
 begin
  insert into public.order_history(order_id,action,actor_id,actor_email,before_data,after_data)
- values(new.id::text,TG_OP,auth.uid(),auth.jwt()->>'email',
-  case when TG_OP='UPDATE' then to_jsonb(old) else null end,to_jsonb(new));
- return new;
+ values((case when TG_OP='DELETE' then old.id else new.id end)::text,TG_OP,auth.uid(),auth.jwt()->>'email',
+  case when TG_OP in ('UPDATE','DELETE') then to_jsonb(old) else null end,
+  case when TG_OP='DELETE' then null else to_jsonb(new) end);
+ return case when TG_OP='DELETE' then old else new end;
 end;
 $$;
 revoke all on function public.record_order_history() from public, anon, authenticated;
 drop trigger if exists orders_record_history on public.orders;
-create trigger orders_record_history after insert or update on public.orders
+create trigger orders_record_history after insert or update or delete on public.orders
  for each row execute function public.record_order_history();
 create index if not exists order_history_order_id_idx on public.order_history(order_id);
 commit;
