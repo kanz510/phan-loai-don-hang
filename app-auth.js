@@ -23,8 +23,10 @@ async function refreshOrders({silent=false}={}){
   try{
    const list=await cloud.list();
    if(epoch!==authEpoch||seq!==refreshSeq||!authorized)return;
-   orders=parseOrders(JSON.stringify(list));dataLoaded=true;lastSuccessfulRefresh=Date.now();
-   render();warning('');
+   const next=parseOrders(JSON.stringify(list));
+   const changed=!dataLoaded||next.length!==orders.length||next.some((o,i)=>o.id!==orders[i].id||o.version!==orders[i].version);
+   orders=next;dataLoaded=true;lastSuccessfulRefresh=Date.now();
+   if(changed)render();warning('');
    if($('syncStatus'))$('syncStatus').textContent='Đã đồng bộ · '+new Date().toLocaleTimeString('vi-VN');
   }catch(error){
    if(epoch!==authEpoch||seq!==refreshSeq)return;
