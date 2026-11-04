@@ -79,7 +79,32 @@ async function cancelOrder(id){
 }
 async function delOrder(id){if(!authorized||busy)return;const order=orders.find(o=>o.id===id);if(!order||!confirm(`Xóa đơn của ${order.name}? Thao tác này không thể hoàn tác.`))return;const epoch=authEpoch;setBusy(true);try{await cloud.remove(order);if(epoch!==authEpoch)return;refreshSeq++;orders=orders.filter(o=>o.id!==id);expandedOrderIds.delete(String(id));render();notify('Đã xóa đơn hàng.');}catch(error){if(epoch===authEpoch)notify(errorText(error));}finally{setBusy(false);}}
 function csvCell(value){let text=String(value??'');if(typeof value==='string'&&/^(?:[\t\r\n]|[\s\uFEFF]*[=+\-@])/.test(text))text="'"+text;return '"'+text.replaceAll('"','""')+'"';}
-function exportCSV(){const rows=[['Tên khách','Hàng mua','Phương thức thanh toán','Số tiền (nghìn đồng)','Giao hàng','Ghi chú','Hoa hồng đã nhận (đồng)','Ngày tạo (giờ Việt Nam)','Trạng thái hoa hồng','Hoa hồng dự kiến (đồng)','Trạng thái thu tiền'],...orders.map(o=>[o.name,o.item,o.pay,o.price,o.del,o.note||'',o.commission,displayDate(orderDateKey(o)),commissionStateLabel(o.comState),o.comExpected??'',o.collection??'Chưa rõ'])];const csv=rows.map(r=>r.map(csvCell).join(',')).join('\r\n');const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download='don-hang-'+new Date().toISOString().slice(0,10)+'.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);notify(`Đã xuất ${orders.length} đơn hàng.`);}
+function orderCSVRows(list){
+ return [['Tên khách','Hàng mua','Phương thức thanh toán','Số tiền (nghìn đồng)','Giao hàng','Ghi chú','Hoa hồng đã nhận (đồng)','Ngày tạo (giờ Việt Nam)','Trạng thái hoa hồng','Hoa hồng dự kiến (đồng)','Trạng thái thu tiền'],
+ ...list.map(o=>[o.name,o.item,o.pay,o.price,o.del,o.note||'',o.commission,displayDate(orderDateKey(o)),
+  commissionStateLabel(o.comState),o.comExpected??'',o.collection??'Chưa rõ'])];
+}
+function downloadCSVRows(rows,filename){
+ const csv=rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
+ const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}));
+ const link=document.createElement('a');link.href=url;link.download=filename;
+ document.body.append(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function exportCSV(){
+ if(!authorized||!dataLoaded)return;
+ downloadCSVRows(orderCSVRows(orders),'don-hang-'+orderDateKey({createdAt:new Date().toISOString()})+'.csv');
+ notify('Đã xuất toàn bộ '+orders.length+' đơn hàng.');
+}
+function exportFilteredCSV(){
+ if(!authorized||!dataLoaded||page!=='orders')return;
+ const error=dateFilter().error;
+ if(error){notify('Chưa xuất CSV: '+error);return;}
+ const matching=filteredOrders(); // Includes ALL matching pages, respects active search and filters.
+ if(!matching.length){notify('Không có đơn khớp bộ lọc để xuất.');return;}
+ downloadCSVRows(orderCSVRows(matching),'don-hang-da-loc-'+orderDateKey({createdAt:new Date().toISOString()})+'.csv');
+ notify('Đã xuất '+matching.length+' đơn khớp bộ lọc trên tất cả các trang.');
+}
 function filterChanged(){currentPage=1;render();}
 function initOrderList(){
 initDateFilters();
@@ -97,5 +122,6 @@ bind('clearFilters','click',()=>{if(searchTimer!==null){clearTimeout(searchTimer
 
 
 bind('exportButton','click',exportCSV);
+bind('exportFilteredButton','click',exportFilteredCSV);
 }
 
