@@ -1,0 +1,42 @@
+name: Wave 2 test branch checks
+on:
+  push:
+    branches:
+      - test/wave2-mobile-sync-20261104
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test-only packages
+        run: npm install --no-save playwright@1.62.1 @electric-sql/pglite@0.3.14
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run offline unit and SQL tests
+        run: |
+          node tests/wave2-sync.cjs
+          node tests/wave1-ranking.mjs
+          node tests/wave1-states.cjs
+          node tests/ai-chat.mjs
+          node tests/ai-quota.cjs
+          node tests/schema.cjs
+      - name: Run mocked browser regression
+        env:
+          CI: 'true'
+        run: |
+          export CHROMIUM_PATH="$(node -p "require('playwright').chromium.executablePath()")"
+          node tests/regression.cjs
+      - name: Store browser snapshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wave2-browser-screenshots
+          path: test-results/
+          if-no-files-found: ignore
