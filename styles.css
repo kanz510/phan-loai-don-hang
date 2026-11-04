@@ -392,3 +392,38 @@ a.commission-reminder:focus-visible{outline:2px solid #a74359;outline-offset:4px
 .wave1-fields[hidden]{display:none!important}
 .wave1-fields .field{min-width:0}
 @media(max-width:540px){.wave1-fields{grid-template-columns:1fr;padding:12px}}
+
+/* Wave 2: compact, readable mobile order cards. Desktop table stays unchanged. */
+.order-mobile-toggle,.order-mobile-state{display:none}
+@media(max-width:540px){
+ body[data-page=orders] .table-wrap{padding:9px 8px;background:#fff9f4}
+ body[data-page=orders] #rows{gap:11px}
+ body[data-page=orders] #rows tr[data-delivery]{gap:9px 12px;padding:14px 13px;border-radius:17px;box-shadow:0 4px 15px #8057400d;min-width:0}
+ body[data-page=orders] #rows tr[data-delivery] td:first-child{min-width:0}
+ body[data-page=orders] #rows .customer{font-size:15px;line-height:1.35;overflow-wrap:anywhere}
+ body[data-page=orders] #rows .item{font-size:12px;margin-top:4px;line-height:1.45}
+ body[data-page=orders] .order-mobile-state{display:block;margin-top:7px;color:#6c5146;font-weight:650;font-size:11px}
+ body[data-page=orders] .order-mobile-toggle{display:inline-flex;align-items:center;justify-content:center;min-height:39px;margin:9px 0 0;padding:7px 11px;background:#fffdf9;color:#74483b;border:1px solid #dfbdac;border-radius:11px;font-size:12px;font-weight:700;box-shadow:none}
+ body[data-page=orders] .order-mobile-toggle:focus-visible{outline:3px solid #9d6250;outline-offset:2px}
+ body[data-page=orders] #rows tr:not(.order-card-expanded) td[data-label="Ngày tạo"],
+ body[data-page=orders] #rows tr:not(.order-card-expanded) td[data-label="Thanh toán"],
+ body[data-page=orders] #rows tr:not(.order-card-expanded) td[data-label="Trạng thái"],
+ body[data-page=orders] #rows tr:not(.order-card-expanded) td[data-label="Ghi chú"]{display:none}
+ body[data-page=orders] #rows tr:not(.order-card-expanded) .actions>:not(.deliver-order):not(.edit-order){display:none}
+ body[data-page=orders] #rows tr:not(.order-card-expanded) td[data-label="Thao tác"]{padding:0}
+ body[data-page=orders] #rows tr td[data-label="Số tiền"],
+ body[data-page=orders] #rows tr td[data-label="Hoa hồng đã nhận"]{min-width:0;overflow-wrap:anywhere}
+ body[data-page=orders] #rows .money{white-space:normal;line-height:1.4;font-size:14px}
+ body[data-page=orders] #rows .commission-money{font-size:13px}
+ body[data-page=orders] #rows .money small{display:block;font-size:10px;font-weight:500;line-height:1.5;margin-top:3px}
+ body[data-page=orders] #rows tr td[data-label="Thao tác"]{grid-column:1/-1}
+ body[data-page=orders] #rows .actions{display:flex;flex-wrap:wrap;gap:8px}
+ body[data-page=orders] #rows .actions .edit-order{min-height:40px;min-width:85px;flex:0 1 auto}
+ body[data-page=orders] #rows .actions .cancel-order,
+ body[data-page=orders] #rows .actions .danger{min-height:40px;flex:1 1 auto}
+ body[data-page=orders] #rows tr.order-card-expanded{border-color:#ddb5a2}
+ body[data-page=orders] #rows tr.order-card-expanded td[data-label="Ngày tạo"],
+ body[data-page=orders] #rows tr.order-card-expanded td[data-label="Thanh toán"],
+ body[data-page=orders] #rows tr.order-card-expanded td[data-label="Ghi chú"]{border-top:1px solid #ead8c9;padding-top:8px}
+ body[data-page=orders] .status-filter{min-height:40px}
+}
