@@ -41,7 +41,7 @@ function reportAggregate(months){
 function reportSelection(orders,year,month){
  const series=reportMonthly(orders,year);
  const current=reportAggregate(month?series.filter(item=>item.month===month):series);
- const previousYear=month===1?year-1:year;
+ const previousYear=!month||month===1?year-1:year;
  const previousMonth=month===1?12:month-1;
  const previous=year<=1970&&!month?null:year===1970&&month===1?null:
   reportAggregate(reportMonthly(orders,previousYear).filter(item=>!month||item.month===previousMonth));
