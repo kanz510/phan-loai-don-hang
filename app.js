@@ -1,8 +1,9 @@
 
-const SUPABASE_URL='https://jsdpdfdyxfxvlxdovnkt.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzZHBkZmR5eGZ4dmx4ZG92bmt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxOTkwODksImV4cCI6MjEwODc3NTA4OX0.fhZsGKrJUCVR5Je8tFmO3X7jJa75xi3TIzRWBupnXG8';
+// Demo branch is fully disconnected from production. Real Supabase is NEVER used here.
+const SUPABASE_URL='https://preview.invalid';
+const SUPABASE_ANON_KEY='DEMO-ONLY-NO-KEY';
 let cloud=null;
-try{cloud=window.createOrdersCloud(SUPABASE_URL,SUPABASE_ANON_KEY);}catch(error){window.cloudStartupError=error.message;}
+try{if(!window.MAY_DEMO)throw new Error('Không tải được chế độ dữ liệu giả, đã chặn kết nối thật.');cloud=window.createOrdersCloud();}catch(error){window.cloudStartupError=error.message;}
 const page=document.body.dataset.page;
 const params=new URLSearchParams(location.search);
 const listReturn=safeRoute(params.get('returnTo')||'orders.html',['orders.html'],'orders.html');
@@ -22,6 +23,13 @@ function render(){
  renderOrderList(list,total);
  if(page==='index')renderReport(orders);
 }
+// Always mark this branch as a synthetic-data preview.
+document.addEventListener('DOMContentLoaded',()=>{});
+const banner=document.createElement('div');banner.className='demo-preview-banner';banner.setAttribute('role','status');
+const badge=document.createElement('strong');badge.textContent='BẢN DEMO · DỮ LIỆU GIẢ · KHÔNG KẾT NỐI SUPABASE';
+const reset=document.createElement('button');reset.type='button';reset.textContent='Đặt lại dữ liệu mẫu';reset.className='secondary';
+reset.addEventListener('click',()=>{if(!confirm('Đặt lại toàn bộ đơn giả và lịch sử demo?'))return;cloud.reset();void refreshOrders();});
+banner.append(badge,reset);document.querySelector('main')?.prepend(banner);
 initOrderList();
 if(page==='index')initReport();
 initFormBindings();
