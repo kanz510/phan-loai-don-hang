@@ -3,7 +3,7 @@
  const mount=$('accountToolsMount');if(!mount)return;
  mount.innerHTML=`<div class="account-tool-buttons"><button type="button" class="secondary" id="togglePassword" aria-expanded="false" aria-controls="passwordPanel">Đổi mật khẩu</button><button type="button" class="secondary" id="toggleHistory" aria-expanded="false" aria-controls="historyPanel">Lịch sử đơn hàng</button></div>
  <section class="account-tool-panel" id="passwordPanel" hidden aria-labelledby="passwordTitle"><h3 id="passwordTitle">Đổi mật khẩu</h3><form id="changePasswordForm"><div class="field"><label for="currentPassword">Mật khẩu hiện tại</label><input id="currentPassword" type="password" autocomplete="current-password" required maxlength="128"></div><div class="field"><label for="newPassword">Mật khẩu mới</label><input id="newPassword" type="password" autocomplete="new-password" required minlength="8" maxlength="128" aria-describedby="newPasswordHint"><small id="newPasswordHint">Ít nhất 8 ký tự.</small></div><div class="field"><label for="confirmPassword">Nhập lại mật khẩu mới</label><input id="confirmPassword" type="password" autocomplete="new-password" required minlength="8" maxlength="128"></div><p id="passwordStatus" role="status" aria-live="polite"></p><button type="submit" id="changePasswordButton">Lưu mật khẩu mới</button></form></section>
- <section class="account-tool-panel" id="historyPanel" hidden aria-labelledby="historyTitle"><h3 id="historyTitle">Lịch sử thêm / sửa đơn</h3><p class="account-tool-hint">Lịch sử được ghi từ khi tính năng được bật.</p><button type="button" class="secondary" id="reloadHistory">Tải lại lịch sử</button><p id="historyStatus" role="status" aria-live="polite"></p><ol class="order-history" id="historyList"></ol><div class="history-pagination"><button type="button" class="secondary" id="historyPrevious" disabled>← Trước</button><span id="historyPage">Trang 1</span><button type="button" class="secondary" id="historyNext" disabled>Sau →</button></div></section>`;
+ <section class="account-tool-panel" id="historyPanel" hidden aria-labelledby="historyTitle"><h3 id="historyTitle">Lịch sử thêm / sửa / xóa đơn</h3><p class="account-tool-hint">Lịch sử được ghi từ khi tính năng được bật.</p><button type="button" class="secondary" id="reloadHistory">Tải lại lịch sử</button><p id="historyStatus" role="status" aria-live="polite"></p><ol class="order-history" id="historyList"></ol><div class="history-pagination"><button type="button" class="secondary" id="historyPrevious" disabled>← Trước</button><span id="historyPage">Trang 1</span><button type="button" class="secondary" id="historyNext" disabled>Sau →</button></div></section>`;
  const form=$('changePasswordForm'),passwordPanel=$('passwordPanel'),historyPanel=$('historyPanel');
  const passwordInputs=['currentPassword','newPassword','confirmPassword'];
  let generation=0,historyStart=0,historyLoading=false,passwordSaving=false;
@@ -54,15 +54,15 @@
  function node(tag,text){const element=document.createElement(tag);element.textContent=text;return element;}
  function renderHistory(rows){
   $('historyList').replaceChildren(...rows.map(row=>{
-   const entry=document.createElement('li'),after=row.after_data||{},before=row.before_data||{};
-   entry.append(node('strong',(row.action==='INSERT'?'Thêm đơn':'Sửa đơn')+' · '+(after.customer_name||'Đơn #'+row.order_id)));
+   const entry=document.createElement('li'),after=row.after_data||{},before=row.before_data||{},deleted=row.action==='DELETE';
+   entry.append(node('strong',(row.action==='INSERT'?'Thêm đơn':deleted?'Xóa đơn':'Sửa đơn')+' · '+(after.customer_name||before.customer_name||'Đơn #'+row.order_id)));
    const date=new Date(row.recorded_at);
    entry.append(node('small',(Number.isNaN(date.getTime())?'Chưa rõ thời gian':date.toLocaleString('vi-VN',{timeZone:ORDER_TIME_ZONE}))+' · '+(row.actor_email||'Hệ thống')));
-   const details=document.createElement('details'),list=document.createElement('dl');details.append(node('summary','Xem nội dung '+(row.action==='INSERT'?'đã thêm':'thay đổi')));
+   const details=document.createElement('details'),list=document.createElement('dl');details.append(node('summary','Xem nội dung '+(row.action==='INSERT'?'đã thêm':deleted?'đã xóa':'thay đổi')));
    for(const [key,label] of Object.entries(fields)){
     if(row.action==='UPDATE'&&JSON.stringify(before[key]??null)===JSON.stringify(after[key]??null))continue;
     const group=document.createElement('div');group.append(node('dt',label));
-    group.append(node('dd',row.action==='INSERT'?valueText(key,after[key]):valueText(key,before[key])+' → '+valueText(key,after[key])));list.append(group);
+    group.append(node('dd',row.action==='INSERT'?valueText(key,after[key]):deleted?valueText(key,before[key]):valueText(key,before[key])+' → '+valueText(key,after[key])));list.append(group);
    }
    if(!list.children.length)list.append(node('dd','Đã lưu cập nhật đơn hàng.'));
    details.append(list);entry.append(details);return entry;
