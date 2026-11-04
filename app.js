@@ -20,8 +20,10 @@ function render(){
  const list=filteredOrders(),total=list.filter(o=>o.del!=='Đã hủy').reduce((s,o)=>s+o.price,0);
  renderStats(list,total);
  renderOrderList(list,total);
+ if(page==='index')renderReport(orders);
 }
 initOrderList();
+if(page==='index')initReport();
 initFormBindings();
 initAuthBindings();
 render();startCloud();
