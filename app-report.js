@@ -127,7 +127,7 @@ function renderReport(list){
  $('reportTableBody').replaceChildren(...series.map(entry=>{
   const row=document.createElement('tr');
   for(const field of [String(entry.month).padStart(2,'0')+'/'+year,entry.count,entry.delivered,entry.undelivered,entry.cancelled,
-   entry.pendingCommission,entry.activeValueVnd.toString(),entry.receivedCommissionVnd.toString()]){
+   entry.pendingCommission,new Intl.NumberFormat('vi-VN').format(entry.activeValueVnd),new Intl.NumberFormat('vi-VN').format(entry.receivedCommissionVnd)]){
    const cell=document.createElement('td');cell.textContent=String(field);row.append(cell);
   }
   return row;
