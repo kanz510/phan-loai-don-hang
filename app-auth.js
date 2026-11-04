@@ -24,7 +24,7 @@ async function refreshOrders({silent=false}={}){
    const list=await cloud.list();
    if(epoch!==authEpoch||seq!==refreshSeq||!authorized)return;
    const next=parseOrders(JSON.stringify(list));
-   const changed=!dataLoaded||next.length!==orders.length||next.some((o,i)=>o.id!==orders[i].id||o.version!==orders[i].version);
+   const changed=!dataLoaded||next.length!==orders.length||next.some((o,i)=>{const old=orders[i];return !old||o.id!==old.id||o.version!==old.version||o.name!==old.name||o.item!==old.item||o.price!==old.price||o.pay!==old.pay||o.del!==old.del||o.note!==old.note||o.commission!==old.commission||o.comState!==old.comState||o.comExpected!==old.comExpected||o.collection!==old.collection||o.createdAt!==old.createdAt;});
    orders=next;dataLoaded=true;lastSuccessfulRefresh=Date.now();
    if(changed)render();warning('');
    if($('syncStatus'))$('syncStatus').textContent='Đã đồng bộ · '+new Date().toLocaleTimeString('vi-VN');
