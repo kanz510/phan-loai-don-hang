@@ -24,7 +24,6 @@ function render(){
  if(page==='index')renderReport(orders);
 }
 // Always mark this branch as a synthetic-data preview.
-document.addEventListener('DOMContentLoaded',()=>{});
 const banner=document.createElement('div');banner.className='demo-preview-banner';banner.setAttribute('role','status');
 const badge=document.createElement('strong');badge.textContent='BẢN DEMO · DỮ LIỆU GIẢ · KHÔNG KẾT NỐI SUPABASE';
 const reset=document.createElement('button');reset.type='button';reset.textContent='Đặt lại dữ liệu mẫu';reset.className='secondary';
