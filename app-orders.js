@@ -19,6 +19,7 @@ function compareOrders(a,b,mode='newest'){
  return (mode==='amount-asc'?a.price-b.price:mode==='amount-desc'?b.price-a.price:0)||dateOrder||tie;
 }
 function filteredOrders(){const q=normalize($('q')?.value||''),fd=$('fDel')?.value||'all';const f=dateFilter();return orders.filter(o=>matchesDate(o,f)&&(!unreceivedCommissionOnly||awaitingCommission(o))&&(fd==='all'||o.del===fd)&&normalize(o.name+' '+o.item).includes(q)).sort((a,b)=>compareOrders(a,b,$('fSort')?.value||'newest'));}
+const expandedOrderIds=new Set();
 function addMobileOrderTools(row,customer,order){
  const status=document.createElement('span');
  status.className='order-mobile-state';
@@ -26,11 +27,14 @@ function addMobileOrderTools(row,customer,order){
  const toggle=document.createElement('button');
  toggle.type='button';
  toggle.className='order-mobile-toggle';
- toggle.setAttribute('aria-expanded','false');
+ const key=String(order.id),expandedInitially=expandedOrderIds.has(key);
+ if(expandedInitially)row.classList.add('order-card-expanded');
+ toggle.setAttribute('aria-expanded',String(expandedInitially));
  toggle.setAttribute('aria-label','Xem thêm thông tin đơn của '+order.name);
- toggle.textContent='Xem chi tiết';
+ toggle.textContent=expandedInitially?'Thu gọn':'Xem chi tiết';
  toggle.addEventListener('click',()=>{
   const expanded=row.classList.toggle('order-card-expanded');
+  if(expanded)expandedOrderIds.add(key);else expandedOrderIds.delete(key);
   toggle.setAttribute('aria-expanded',String(expanded));
   toggle.textContent=expanded?'Thu gọn':'Xem chi tiết';
  });
@@ -73,7 +77,7 @@ async function cancelOrder(id){
  catch(error){if(epoch===authEpoch)notify('Chưa hủy được. '+cancelError(error));}
  finally{setBusy(false);}
 }
-async function delOrder(id){if(!authorized||busy)return;const order=orders.find(o=>o.id===id);if(!order||!confirm(`Xóa đơn của ${order.name}? Thao tác này không thể hoàn tác.`))return;const epoch=authEpoch;setBusy(true);try{await cloud.remove(order);if(epoch!==authEpoch)return;refreshSeq++;orders=orders.filter(o=>o.id!==id);render();notify('Đã xóa đơn hàng.');}catch(error){if(epoch===authEpoch)notify(errorText(error));}finally{setBusy(false);}}
+async function delOrder(id){if(!authorized||busy)return;const order=orders.find(o=>o.id===id);if(!order||!confirm(`Xóa đơn của ${order.name}? Thao tác này không thể hoàn tác.`))return;const epoch=authEpoch;setBusy(true);try{await cloud.remove(order);if(epoch!==authEpoch)return;refreshSeq++;orders=orders.filter(o=>o.id!==id);expandedOrderIds.delete(String(id));render();notify('Đã xóa đơn hàng.');}catch(error){if(epoch===authEpoch)notify(errorText(error));}finally{setBusy(false);}}
 function csvCell(value){let text=String(value??'');if(typeof value==='string'&&/^(?:[\t\r\n]|[\s\uFEFF]*[=+\-@])/.test(text))text="'"+text;return '"'+text.replaceAll('"','""')+'"';}
 function exportCSV(){const rows=[['Tên khách','Hàng mua','Phương thức thanh toán','Số tiền (nghìn đồng)','Giao hàng','Ghi chú','Hoa hồng đã nhận (đồng)','Ngày tạo (giờ Việt Nam)','Trạng thái hoa hồng','Hoa hồng dự kiến (đồng)','Trạng thái thu tiền'],...orders.map(o=>[o.name,o.item,o.pay,o.price,o.del,o.note||'',o.commission,displayDate(orderDateKey(o)),commissionStateLabel(o.comState),o.comExpected??'',o.collection??'Chưa rõ'])];const csv=rows.map(r=>r.map(csvCell).join(',')).join('\r\n');const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download='don-hang-'+new Date().toISOString().slice(0,10)+'.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);notify(`Đã xuất ${orders.length} đơn hàng.`);}
 function filterChanged(){currentPage=1;render();}
@@ -88,7 +92,7 @@ let searchTimer=null;
  bind('q','input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{searchTimer=null;filterChanged();},160);});
  bind('q','keydown',event=>{if(event.key==='Enter')flushSearch();});
  bind('q','blur',flushSearch);
- for(const id of ['fSort','fDel'])bind(id,'change',()=>{flushSearch();filterChanged();});
+ for(const id of ['fSort','fDel'])bind(id,'change',()=>{if(searchTimer!==null){clearTimeout(searchTimer);searchTimer=null;}filterChanged();});
 bind('clearFilters','click',()=>{if(searchTimer!==null){clearTimeout(searchTimer);searchTimer=null;}unreceivedCommissionOnly=false;$('q').value='';$('fSort').value='newest';$('fDel').value='all';$('fDateMode').value='all';$('fMonth').value='';$('fFrom').value='';$('fTo').value='';filterChanged();});
 
 
