@@ -40,6 +40,21 @@ await page.goto(url);await page.waitForURL('**/account.html?next=*');assert.equa
 await page.evaluate(()=>localStorage.setItem('phan-loai-don-hang-v2','[{"legacy":true}]'));
 await login(page);assert.ok(page.url().endsWith('/shop/index.html'));
 assert.equal(await page.locator('#rows').count(),0);assert.equal(await page.locator('#orderForm').count(),0);assert.equal(await page.locator('#stats .card').count(),6);assert.equal(await page.evaluate(()=>sumCommissions([...Array.from({length:1001},()=>({commission:9000000000000})),{commission:1}]).toString()),'9009000000000001');assert.equal(await page.locator('.quick-action').count(),4);
+// Wave 3: authorized dashboard monthly report and its 12-month CSV.
+assert.equal(await page.locator('#reportPanel').isVisible(),true);
+assert.equal(await page.locator('#reportChart .report-bar').count(),12);
+await page.locator('#reportYear').selectOption('2023');
+await page.locator('#reportMonth').selectOption('11');
+assert.equal(await page.locator('#reportPeriodTitle').innerText(),'Tháng 11/2023');
+assert.ok((await page.locator('#reportSummary').innerText()).includes('31'));
+assert.ok((await page.locator('#reportOrdersLink').getAttribute('href')).includes('month=11'));
+assert.equal(await page.locator('#reportTableBody tr').count(),12);
+const [monthReportDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#reportExport').click()]);
+assert.equal(monthReportDownload.suggestedFilename(),'bao-cao-theo-thang-2023.csv');
+assert.equal(fs.readFileSync(await monthReportDownload.path(),'utf8').trim().split(/\r?\n/).length,13);
+await page.locator('#reportChart .report-bar').nth(9).click();
+assert.equal(await page.locator('#reportPeriodTitle').innerText(),'Tháng 10/2023');
+
 // Read-only popup: search is accent insensitive, output is text, links carry filters.
 const ask=async text=>{await page.locator('#chatInput').fill(text);await page.locator('#chatForm button[type=submit]').click();return page.locator('#chatMessages .bot').last().innerText();};
 await page.locator('#chatLauncher').click();assert.equal(await page.locator('#chatLauncher').getAttribute('aria-expanded'),'true');
@@ -63,7 +78,12 @@ await page.getByRole('group',{name:'Lọc nhanh đơn hàng'}).getByRole('button
 await page.locator('#pagerTop').getByRole('button',{name:'Sau →',exact:true}).click();assert.ok(page.url().includes('page=2'));assert.equal(await page.locator('#pagerBottom span').innerText(),'Trang 2 / 4');await page.reload();await synced(page);assert.equal(await page.locator('#pagerTop span').innerText(),'Trang 2 / 4');
 // Real edit page loads by ID; cancel returns to the same list page.
 await page.locator('#rows tr').first().getByRole('link',{name:'Sửa',exact:false}).click();await page.waitForFunction(()=>!document.getElementById('saveButton').disabled);const oldName=await page.locator('#fName').inputValue();assert.ok(oldName);await page.locator('#cancelEdit').click();await synced(page);assert.equal(await page.locator('#pagerTop span').innerText(),'Trang 2 / 4');
-await page.locator('#q').fill('ngoc quynh');await page.waitForFunction(()=>document.querySelectorAll('#rows tr').length===2);assert.equal(await page.locator('#rows tr').count(),2);assert.equal(await page.locator('#pagerTop span').innerText(),'Trang 1 / 1');await page.reload();await synced(page);assert.equal(await page.locator('#q').inputValue(),'ngoc quynh');assert.equal(await page.locator('#rows tr').count(),2);
+await page.locator('#q').fill('ngoc quynh');await page.waitForFunction(()=>document.querySelectorAll('#rows tr').length===2);assert.equal(await page.locator('#rows tr').count(),2);
+const [filteredCsvDownload]=await Promise.all([page.waitForEvent('download'),page.locator('#exportFilteredButton').click()]);
+assert.ok(filteredCsvDownload.suggestedFilename().startsWith('don-hang-da-loc-'));
+const filteredCsvText=fs.readFileSync(await filteredCsvDownload.path(),'utf8');
+assert.equal(filteredCsvText.trim().split(/\r?\n/).length,3);
+assert.equal(await page.locator('#pagerTop span').innerText(),'Trang 1 / 1');await page.reload();await synced(page);assert.equal(await page.locator('#q').inputValue(),'ngoc quynh');assert.equal(await page.locator('#rows tr').count(),2);
 await page.locator('#rows tr').first().getByRole('link',{name:'Sửa',exact:false}).click();await page.waitForFunction(()=>!document.getElementById('saveButton').disabled);await page.locator('#fPrice').fill('200');await page.locator('#fCommission').fill('25');await save();assert.equal(await page.locator('#q').inputValue(),'ngoc quynh');assert.equal(db.find(o=>o.customer_name==='Ngọc Quỳnh'&&o.amount_k===200)?.version,2);assert.equal(db.find(o=>o.customer_name==='Ngọc Quỳnh'&&o.amount_k===200)?.commission_amount,25000);await page.reload();await synced(page);await page.locator('#clearFilters').click();
 await fill('<img src=x onerror="window.xss=true">');await page.locator('#fCommission').fill('50');await save();assert.equal(db[0].commission_amount,50000);assert.equal(db.length,32);assert.equal(await page.locator('#rows img').count(),0);assert.equal(await page.evaluate(()=>window.xss),undefined);
 await page.locator('#rows tr').first().getByRole('link',{name:'Sửa',exact:false}).click();await page.waitForFunction(()=>!document.getElementById('saveButton').disabled);
