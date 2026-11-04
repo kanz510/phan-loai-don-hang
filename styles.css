@@ -494,3 +494,9 @@ a.commission-reminder:focus-visible{outline:2px solid #a74359;outline-offset:4px
  .report-table-wrap td::before{display:none}
 }
 @media(prefers-reduced-motion:reduce){.report-bar-fill{transition:none}}
+
+/* Dedicated synthetic demo branch: always-visible data isolation warning. */
+.demo-preview-banner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px;margin-bottom:14px;padding:10px 14px;border-radius:12px;background:#fff1d9;border:1px solid #ddbb7e;color:#745021;font-size:11px;line-height:1.5;box-shadow:0 3px 12px #9b753010}
+.demo-preview-banner strong{font-size:11px;letter-spacing:.02em}
+.demo-preview-banner button{min-height:38px;box-shadow:none;font-size:11px;padding:8px 12px;flex-shrink:0}
+@media(max-width:540px){.demo-preview-banner{padding:9px 11px}.demo-preview-banner strong{font-size:10px}.demo-preview-banner button{width:100%}}
