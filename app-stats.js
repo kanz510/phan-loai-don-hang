@@ -17,7 +17,10 @@ function renderStats(list,total){
   }
  }
  const delivered=orders.filter(o=>o.del==='Đã giao').length,undelivered=orders.filter(o=>o.del==='Chưa giao').length,cancelled=orders.filter(o=>o.del==='Đã hủy').length,unknown=orders.length-delivered-undelivered-cancelled;
- const stats=[['Tổng đơn hàng',orders.length,'Tất cả đơn đã lưu'],['Tổng giá trị đơn',fmt(total),'Không tính các đơn đã hủy'],['Đã giao',delivered,'Đơn hoàn thành giao hàng'],['Chưa giao',undelivered,`${unknown} đơn chưa rõ trạng thái`],['Đã hủy',cancelled,'Đơn được giữ lại để đối chiếu'],['Hoa hồng đã nhận',fmtCommission(sumCommissions(orders)),'Cộng số đã nhận, kể cả đơn hủy']];
+ // Money for orders uses thousands of VND; convert exactly once before estimating 15%.
+ const unreceivedOrderValue=orders.filter(o=>o.commission===0).reduce((sum,o)=>sum+BigInt(Math.round(o.price*1000)),0n);
+ const estimatedCommission=sumCommissions(orders)+(unreceivedOrderValue*15n+50n)/100n;
+ const stats=[['Tổng đơn hàng',orders.length,'Tất cả đơn đã lưu'],['Tổng giá trị đơn',fmt(total),'Không tính các đơn đã hủy'],['Đã giao',delivered,'Đơn hoàn thành giao hàng'],['Chưa giao',undelivered,`${unknown} đơn chưa rõ trạng thái`],['Đã hủy',cancelled,'Đơn được giữ lại để đối chiếu'],['Hoa hồng đã nhận',fmtCommission(sumCommissions(orders)),'Tổng hoa hồng dự kiến: '+fmtCommission(estimatedCommission)]];
  if($('stats'))$('stats').replaceChildren(...stats.map(([title,value,detail],index)=>{const card=document.createElement('div');card.className='card';if(index===4)card.dataset.stat='cancelled';if(index===5)card.dataset.stat='commission';const marker=document.createElement('span');marker.className='stat-icon';marker.append(createIcon(['bag','wallet','check','clock','cancel','wallet'][index]));card.append(marker);for(const [tag,text] of [['span',title],['b',value],['small',detail]]){const node=document.createElement(tag);node.textContent=text;card.append(node);}return card;}));
  if($('statsSummary'))$('statsSummary').textContent=`${orders.length} đơn · Giá trị chưa hủy: ${fmt(orders.filter(o=>o.del!=='Đã hủy').reduce((sum,o)=>sum+o.price,0))} · ${undelivered} chưa giao · ${cancelled} đã hủy`;
 }
