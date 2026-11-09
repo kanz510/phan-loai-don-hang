@@ -63,8 +63,7 @@ function card(title,value,detail,mark,stat){
 function home(){
  const dt=new Date();const day=new Intl.DateTimeFormat('vi-VN',{weekday:'long',timeZone:'Asia/Ho_Chi_Minh'}).format(dt);
  if($('mayWeekday'))$('mayWeekday').textContent=day.charAt(0).toUpperCase()+day.slice(1);
- if($('mayCalendar'))$('mayCalendar').textContent='Ngày '+new Intl.DateTimeFormat('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'Asia/Ho_Chi_Minh'}).format(dt).replaceAll('/',' tháng ').replace(' tháng 2026',' năm 2026');
- if($('mayCalendar'))$('mayCalendar').textContent='Ngày '+dt.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'Asia/Ho_Chi_Minh'}).replace(/^(\\d{2})\\/(\\d{2})\\/(\\d{4})$/,'$1 tháng $2 năm $3');
+ if($('mayCalendar'))$('mayCalendar').textContent='Ngày '+dt.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'Asia/Ho_Chi_Minh'}).replace(/^(\d{2})\/(\d{2})\/(\d{4})$/,'$1 tháng $2 năm $3');
  const counts={done:orders.filter(o=>o.del==='Đã giao').length,pending:orders.filter(o=>o.del==='Chưa giao').length,cancel:orders.filter(o=>o.del==='Đã hủy').length,unknown:orders.filter(o=>o.del==='Chưa rõ').length};
  $('stats').replaceChildren();
  card('Tổng đơn hàng',String(orders.length),'Tất cả đơn đã lưu','bag');
@@ -84,10 +83,10 @@ function dateFilter(o){
  return true;
 }
 function matched(){
- const q=($('q')?.value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+ const q=($('q')?.value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  const del=$('fDel')?.value||'all';
  const sort=$('fSort')?.value||'newest';
- const list=orders.filter(o=>(!unreceived||o.commission===0)&&(del==='all'||del===o.del)&&dateFilter(o)&&(o.name+' '+o.item).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().includes(q));
+ const list=orders.filter(o=>(!unreceived||o.commission===0)&&(del==='all'||del===o.del)&&dateFilter(o)&&(o.name+' '+o.item).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(q));
  list.sort((a,b)=>sort==='oldest'?Date.parse(a.createdAt)-Date.parse(b.createdAt):sort==='amount-asc'?a.price-b.price:sort==='amount-desc'?b.price-a.price:Date.parse(b.createdAt)-Date.parse(a.createdAt));
  return list;
 }
@@ -139,7 +138,7 @@ function initList(){
  $('clearFilters')?.addEventListener('click',()=>{unreceived=false;$('q').value='';$('fSort').value='newest';$('fDel').value='all';$('fDateMode').value='all';$('fFrom').value='';$('fTo').value='';currentPage=1;renderOrders()});
  $('exportButton')?.addEventListener('click',()=>{
    const data=[['Khách','Mặt hàng','Số tiền (nghìn đồng)','Hoa hồng (đồng)','Trạng thái'],...orders.map(o=>[o.name,o.item,o.price,o.commission,o.del])];
-   const csv='\\ufeff'+data.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\\r\\n');
+   const csv='\ufeff'+data.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');
    const link=document.createElement('a'),blob=new Blob([csv],{type:'text/csv;charset=utf-8'});link.href=URL.createObjectURL(blob);link.download='don-hang-demo.csv';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),2000);
  });
  renderOrders();
@@ -179,7 +178,7 @@ function initChat(){
  $('demoChatForm').addEventListener('submit',e=>{
    e.preventDefault();const input=$('demoChatInput'),q=input.value.trim();if(!q)return;
    const box=$('demoChatMessages');const user=add(box,'div',undefined,'may-chat-message user');add(user,'p',q);
-   const clean=q.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+   const clean=q.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
    let reply='Bản demo chỉ tra cứu tổng quan mẫu. Có '+orders.length+' đơn, trong đó '+orders.filter(o=>o.del==='Chưa giao').length+' đơn chưa giao.';
    if(clean.includes('hoa hong'))reply='Hoa hồng đã nhận: '+fmtVnd(sum(orders,'commission'))+'. Tổng dự kiến: '+fmtVnd(expected())+' (giả định 15% giá trị đơn chưa nhận hoa hồng).';
    else if(clean.includes('chua giao'))reply='Có '+orders.filter(o=>o.del==='Chưa giao').length+' đơn chưa giao trong dữ liệu minh họa.';
