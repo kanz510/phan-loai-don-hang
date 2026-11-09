@@ -16,10 +16,8 @@ async function applySession(session){
  if(!user){if(page!=='account'){location.replace(loginRoute());return;}setText('authStatus',window.cloudStartupError||'Nhập tài khoản do chủ cửa hàng cấp.');$('authPanel').hidden=false;$('accountDetails').hidden=true;return;}
  setText('authStatus','Đang kiểm tra quyền truy cập…');
  try{const member=await cloud.member();if(epoch!==authEpoch)return;authorized=true;
- if(page==='account'){$('authPanel').hidden=true;$('accountDetails').hidden=false;setText('memberEmail',user.email);setText('accountGreeting',member.role==='admin'?'Chào Admin':'Chào '+(user.email||'bạn').split('@')[0]);const next=safeRoute(params.get('next')||'index.html',['index.html','orders.html','order.html','download.html'],'index.html');$('accountContinue').href=next;if(params.has('next')){location.replace(next);return;}await refreshOrders({silent:true});return;}
+ if(page==='account'){$('authPanel').hidden=true;$('accountDetails').hidden=false;setText('memberEmail',user.email);setText('accountGreeting',member.role==='admin'?'Chào Admin':'Chào '+(user.email||'bạn').split('@')[0]);const next=safeRoute(params.get('next')||'index.html',['index.html','orders.html','order.html'],'index.html');$('accountContinue').href=next;if(params.has('next')){location.replace(next);return;}await refreshOrders({silent:true});return;}
  $('accessPanel').hidden=true;$('sharedApp').hidden=false;
-// The downloader only needs membership authorization; never load or subscribe to orders here.
-if(page==='download')return;
 await refreshOrders();if(epoch!==authEpoch)return;
  channel=cloud.client.channel('shared-orders').on('postgres_changes',{event:'*',schema:'public',table:'orders'},()=>{if(!busy)refreshOrders({silent:true});}).subscribe();
  pollTimer=setInterval(()=>{if(!document.hidden&&!busy)refreshOrders({silent:true});},15000);
@@ -36,7 +34,7 @@ function initAuthBindings(){
 bind('loginForm','submit',async event=>{event.preventDefault();if(!cloud)return;$('loginButton').disabled=true;setText('authStatus','Đang đăng nhập…');try{const login=$('email').value.trim();if(!login)throw new Error('Vui lòng nhập tên đăng nhập.');const email=login.includes('@')?login:login+'@admin.com';const {error}=await cloud.client.auth.signInWithPassword({email,password:$('password').value});if(error)throw error;$('password').value='';}catch(error){setText('authStatus','Đăng nhập không thành công. '+errorText(error));}finally{$('loginButton').disabled=false;}});
 bind('logoutButton','click',async()=>{if(busy)return;const {error}=await cloud.client.auth.signOut({scope:'local'});if(error){notify(errorText(error));return;}editorDirty=false;applySession(null);});
 bind('refreshButton','click',()=>refreshOrders());
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!busy&&page!=='account'&&page!=='download')refreshOrders({silent:true});});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!busy&&page!=='account')refreshOrders({silent:true});});
 
 }
 
