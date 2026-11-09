@@ -386,3 +386,16 @@ body[data-page=orders] .toolbar-actions:has(.pagination:empty){display:none}
 /* Keep the existing reminder appearance while making the whole pill a link. */
 a.commission-reminder{text-decoration:none;cursor:pointer}
 a.commission-reminder:focus-visible{outline:2px solid #a74359;outline-offset:4px}
+
+/* Tải video TikTok/Douyin (app-download.js). */
+.dl-panel .dl-body{padding:19px 20px;display:flex;flex-direction:column;gap:14px}
+.dl-message{margin-bottom:0}
+.dl-message.dl-info{background:#eef7f0;border-color:#c5dfd1;color:#315f4d}
+.dl-result{display:flex;gap:14px;align-items:flex-start}
+.dl-result img{width:120px;height:160px;object-fit:cover;border-radius:12px;border:1px solid var(--line)}
+.dl-thumb-placeholder{width:120px;height:160px;display:flex;align-items:center;justify-content:center;font-size:34px;border-radius:12px;border:1px solid var(--line);background:#fff5ee}
+.dl-meta{display:flex;flex-direction:column;gap:5px;min-width:0;font-size:13px;color:#765f55}
+.dl-meta b{font-size:15px;color:#593e36;line-height:1.4}
+.dl-job{font-size:13px;color:#765f55}
+.dl-file{align-self:flex-start}
+@media (max-width:560px){.dl-result img,.dl-thumb-placeholder{width:96px;height:128px}}

@@ -16,7 +16,7 @@ let editorDirty=false;
 function render(){
  window.mayChatSync?.();
  if($('moreFilterSummary')){const active=[$('fDel')?.value].filter(value=>value&&value!=='all').length+Number(unreceivedCommissionOnly);$('moreFilterSummary').textContent=active?'· '+active+' đang lọc':'';}
- if(page==='order'){initEditor();return;}if(page==='account'||(page==='orders'&&!dataLoaded))return;
+ if(page==='order'){initEditor();return;}if(page==='account'||page==='download'||(page==='orders'&&!dataLoaded))return;
  const list=filteredOrders(),total=list.filter(o=>o.del!=='Đã hủy').reduce((s,o)=>s+o.price,0);
  renderStats(list,total);
  renderOrderList(list,total);
