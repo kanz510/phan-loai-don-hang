@@ -1,0 +1,128 @@
+/* Kem & May Liquid Glass Skin preview
+   Only colors, surfaces, borders, shadows and decorative effects.
+   Grid, typography sizes, element order and nav placement inherit main/styles.css.
+   No real credentials or network API in this preview. */
+:root{
+ color-scheme:light;
+ --green:#aa617a;--ink:#513a48;--muted:#806b79;--line:#eed5e3;
+ --coral:#d9809b;--blush:#f5b5ce;--cream:#f9e8f3;--peach:#ffe0eb;--mint:#99cfbf;
+ --panel:rgba(255,255,255,.79);--shadow:0 8px 26px #9c63821a;
+ --done:#e6f5ec;--done-hover:#daede4;--done-ink:#2f705e;
+ --pending:#fff0df;--pending-hover:#ffe5c9;--pending-ink:#926337;
+ --unknown:#f2edf2;--unknown-hover:#ece4ee;--unknown-ink:#665763;
+ color:#513a48;background:#fff7fc;
+}
+body{
+ color:#513a48;
+ background:
+ radial-gradient(ellipse at 9% 2%,#ffdceba0,transparent 46%),
+ radial-gradient(ellipse at 96% 12%,#dcccf2b8,transparent 45%),
+ radial-gradient(ellipse at 60% 87%,#f7d7e7a8,transparent 47%),
+ #fff8fb;
+ background-attachment:fixed;
+}
+header:not(.may-chat-head){background:rgba(255,250,253,.83);border-bottom-color:#efd8e5;box-shadow:0 7px 25px #b3728b0c}
+.app-nav a{color:#725766}
+.app-nav a[aria-current=page]{
+ color:#713d54;background:linear-gradient(135deg,#ffd3e3ea,#f8d7efed);
+ box-shadow:inset 0 1px 0 #fff,inset 0 0 0 1px #e7b8cd,0 4px 14px #c270961c;
+}
+.app-nav a:hover{background:#fce2ee;color:#713d54}
+h1,.page-heading h2,.card b{color:#543e4d}
+.brand p,.eyebrow,.section-label,.page-heading p{color:#806477}
+button,.button{
+ background:linear-gradient(145deg,#e29bb3,#d27d9c);
+ border-color:#d78ca8;color:#fff;box-shadow:inset 0 1px 0 #ffffff55,0 5px 16px #c16e9240;
+}
+button.secondary,.button.secondary{background:rgba(255,255,255,.72);color:#745668;border-color:#ead0df;box-shadow:inset 0 1px 0 #fff,0 3px 12px #b8789b12}
+.panel,.quick-action,.date-filter-panel,.auth-panel,.account-details,.editor-page,.em-kem-settings{
+ background:rgba(255,255,255,.80);border-color:rgba(234,205,224,.91);
+ box-shadow:inset 0 1px 0 #fff,0 10px 28px #b4759816;
+}
+body[data-page=index] .dashboard .may-welcome{
+ color:#663c53;
+ background:linear-gradient(125deg,rgba(249,191,214,.92),rgba(239,190,218,.83) 52%,rgba(252,222,239,.90));
+ border-color:#edb8cf;
+ box-shadow:inset 0 1px 0 #ffffff9c,0 9px 28px #ce8ba94b;
+}
+body[data-page=index] .may-welcome h2{color:#6a3d51;text-shadow:0 1px 0 #ffffff8c}
+body[data-page=index] .may-welcome .may-welcome-brand{color:#715064}
+body[data-page=index] .may-welcome-brand::before{background:#d9769b;box-shadow:0 0 0 3px #fff6fa99}
+body[data-page=index] .may-welcome p{color:#6b4d60}
+body[data-page=index] .may-welcome-photo{background:#fff6fa;border-color:#f5d2e1;box-shadow:0 7px 16px #a5678833}
+body[data-page=index] #stats>.card{
+ border-color:#eacfe0;
+ box-shadow:inset 0 1px 0 #ffffffde,0 8px 22px #b47d9a18;
+}
+body[data-page=index] #stats>.card:first-child{
+ background:linear-gradient(145deg,rgba(255,206,225,.91),rgba(254,225,236,.90));color:#654457;border-color:#e9bdd1;
+}
+body[data-page=index] #stats>.card:nth-child(2){
+ background:linear-gradient(145deg,rgba(255,247,252,.96),rgba(246,227,243,.85));color:#553f50;
+}
+body[data-page=index] #stats>.card:nth-child(3){
+ background:linear-gradient(145deg,rgba(227,248,239,.92),rgba(234,247,244,.86));color:#316954;border-color:#cbe9dc;
+}
+body[data-page=index] #stats>.card:nth-child(4){
+ background:linear-gradient(145deg,rgba(255,242,223,.96),rgba(255,237,226,.88));color:#8c5b39;border-color:#f0d7c8;
+}
+body[data-page=index] #stats>.card[data-stat=cancelled]{
+ background:linear-gradient(145deg,rgba(255,237,243,.95),rgba(250,221,231,.87));color:#9b4965;border-color:#ecc6d4;
+}
+body[data-page=index] #stats>.card[data-stat=commission]{
+ background:linear-gradient(145deg,rgba(255,238,221,.95),rgba(255,225,239,.91));color:#7b4b60;border-color:#edcad5;
+}
+body[data-page=index] #stats>.card .stat-icon{
+ background:#ffffffa6;color:inherit;border-color:#ffffffa4;box-shadow:0 3px 10px #bd91a31c;
+}
+body[data-page=index] #stats>.card::after{display:none!important}
+body[data-page=index] #stats>.card b{color:inherit}
+body[data-page=index] #stats>.card small{color:#765c6b}
+body[data-page=index] #stats>.card:nth-child(3) small{color:#4d7565}
+body[data-page=index] #stats>.card:nth-child(4) small{color:#886647}
+.quick-action{color:#624c5a;background:rgba(255,252,255,.77);border-color:#edd5e4;box-shadow:inset 0 1px 0 #fff,0 7px 23px #b888a51c}
+.quick-action:nth-child(2){
+ background:linear-gradient(140deg,rgba(245,177,200,.91),rgba(230,142,175,.89));color:#643c51;border-color:#dfa6bd
+}
+.quick-action:nth-child(2) span:not(.quick-icon){color:#6e435b}
+.quick-action>.quick-icon{background:#fce1ee;color:#8b526c}
+.quick-action:nth-child(2)>.quick-icon{background:#ffffff76;color:#854a64}
+.quick-action:nth-child(3)>.quick-icon{background:#fff1df;color:#92683e}
+.quick-action.quick-cancel>.quick-icon{background:#fce3ee;color:#9d5873}
+.commission-reminder{background:rgba(255,229,237,.86);border-color:#edc6d6;color:#825468;box-shadow:inset 0 1px 0 #fff,0 5px 17px #b8789b17}
+#commissionReminderCount{color:#ac4f76}
+.page-heading{background:linear-gradient(145deg,#f8e4f0,#fff8fb);border-color:#ebd3e3}
+.date-filter-panel,.list-tools{background:rgba(255,252,255,.92)}
+.list-tools{box-shadow:0 5px 13px #b8759710}
+.controls{background:#fff7fc;border-color:#efdeea}
+.status-filter{background:rgba(246,233,242,.94);color:#755b6b}
+.status-filter[aria-pressed=true]{border-color:#c87799;box-shadow:0 0 0 2px #fff,0 0 0 3px #d892b2}
+.status-filter[data-delivery-filter="Đã hủy"]{background:#fce4ed;color:#91495e}
+body[data-page=orders] .commission-filter{background:#fff0df;color:#8a6050}
+input,select,textarea{background:rgba(255,255,255,.81);border-color:#ead3e1;color:#543e4c;box-shadow:inset 0 1px 3px #bd92aa0b}
+input:focus,select:focus,textarea:focus{border-color:#d58cae;box-shadow:0 0 0 3px #e5b0ca55}
+.tag.done{background:#e2f4e9;color:#31715a;border-color:#cae8d8}
+.tag.not{background:#fff0df;color:#916039;border-color:#f3ddc5}
+.tag.cancelled{background:#fce2ed;color:#995270;border-color:#eabdd1}
+tr[data-delivery=cancelled]{--row-bg:#fce8ef;--row-hover:#f7dce6;--row-edge:#d67b99}
+.editor-page .panel-head{background:linear-gradient(105deg,rgba(255,219,234,.9),rgba(250,238,249,.91))}
+label,.field label{color:#735469}
+.account-greeting{color:#955676}
+.account-tool-buttons button.secondary{background:#ffeef6;border-color:#edd1df;color:#83586d}
+.account-tool-panel,.order-history>li{background:#fff8fc;border-color:#efdae7}
+.em-kem-bubble{background:#fff5fb;border-color:#ebcadd;color:#70475d}
+.em-kem-bubble::after{background:#fff5fb;border-color:#ebcadd}
+.may-chat-panel{background:#fff8fd;border-color:#ead2df;box-shadow:0 15px 40px #8e4f7650}
+.demo-ribbon{
+ position:fixed;left:11px;bottom:10px;z-index:900;max-width:48vw;
+ background:rgba(255,255,255,.78);border:1px solid #edc9dc;box-shadow:0 5px 16px #87597822;
+ border-radius:999px;color:#87546d;font:600 10px system-ui,sans-serif;padding:6px 9px;pointer-events:none
+}
+.demo-message{white-space:pre-line}
+@supports ((-webkit-backdrop-filter:blur(8px)) or (backdrop-filter:blur(8px))){
+ header:not(.may-chat-head),.app-nav a[aria-current=page],.panel,.quick-action,.card,.list-tools,.may-chat-panel,.status-filter,.commission-reminder{
+ -webkit-backdrop-filter:blur(9px) saturate(125%);
+ backdrop-filter:blur(9px) saturate(125%);
+ }
+}
+@media(prefers-reduced-motion:reduce){.card,.quick-action{animation:none!important;transition:none!important}}
