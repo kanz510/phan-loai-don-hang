@@ -6,7 +6,7 @@ var form = $('dlForm'), input = $('dlUrl'), message = $('dlMessage');
 var videoButton = $('dlVideo'), audioButton = $('dlAudio');
 var pasteButton = $('dlPaste'), resetButton = $('dlReset');
 var jobStatus = $('dlJobStatus'), jobText = $('dlJobText');
-var fileReady = $('dlFileReady'), shareButton = $('dlShare');
+var fileReady = $('dlFileReady'), shareButton = $('dlShare'), fullButton = $('dlFull');
 if (!form || !videoButton || !audioButton) return;
 
 var pending = false, requestId = 0, pollTimer = null, fileController = null, shareFile = null;
@@ -35,6 +35,7 @@ function clearResult(clearInput) {
   shareFile = null;
   if (clearInput) input.value = '';
   if (shareButton) shareButton.hidden = true;
+  if (fullButton) fullButton.hidden = true;
   if (fileReady) {
     fileReady.hidden = true;
     fileReady.removeAttribute('href');
@@ -72,7 +73,7 @@ async function api(path, payload) {
   return data;
 }
 function getFileUrl(path) {
-  if (typeof path !== 'string' || !/^\/api\/files\/[^/?#]+$/.test(path)) {
+  if (typeof path !== 'string' || !/^\/api\/(files|stream)\/[^/?#]+$/.test(path)) {
     throw new Error('Máy chủ trả đường dẫn tệp không hợp lệ.');
   }
   var url = new URL(path, DL_API);
@@ -124,12 +125,14 @@ async function prepareIOSShare(href, ticket) {
     setMessage('Video đã xong! Bấm “Chia sẻ / Lưu vào Ảnh” rồi chọn “Lưu video” trong bảng chia sẻ của iPhone.', 'info');
   } catch (err) {
     if (ticket !== requestId || (err && err.name === 'AbortError')) return;
+    // Stream failed (server returns 502): offer the full-download fallback.
+    if (fullButton && href.indexOf('/api/stream/') !== -1) fullButton.hidden = false;
     setMessage(fallbackHint('video'), 'info');
   } finally {
     if (fileController === controller) fileController = null;
   }
 }
-async function startDownload(kind) {
+async function startDownload(kind, mode) {
   if (pending) return;
   var url;
   try { url = validateLink(input.value.trim()); }
@@ -140,7 +143,9 @@ async function startDownload(kind) {
   setPending(true);
   if (jobText) jobText.textContent = kind === 'audio' ? 'Đang xử lý MP3...' : 'Đang xử lý video...';
   try {
-    var started = await api('/api/download', { url: url, type: kind });
+    var payload = { url: url, type: kind };
+    if (mode === 'full') payload.mode = 'full';
+    var started = await api('/api/download', payload);
     if (ticket !== requestId) return;
     if (!started || typeof started.job_id !== 'string' || !started.job_id) {
       throw new Error('Máy chủ chưa trả mã tác vụ.');
@@ -152,7 +157,8 @@ async function startDownload(kind) {
       var status = await api('/api/jobs/' + encodeURIComponent(started.job_id));
       if (ticket !== requestId) return;
       if (status.status === 'ready') {
-        var href = getFileUrl(status.download_url);
+        // V2: stream jobs carry stream_url; file jobs carry download_url.
+        var href = getFileUrl(status.stream_url || status.download_url);
         setPending(false);
         fileReady.href = href;
         fileReady.download = kind === 'audio' ? 'HimTik.mp3' : 'HimTik.mp4';
@@ -161,7 +167,10 @@ async function startDownload(kind) {
         if (kind === 'video') prepareIOSShare(href, ticket);
         return;
       }
-      if (status.status === 'error') throw new Error(status.error || 'Máy chủ không tải được tệp.');
+      if (status.status === 'error') {
+        if (status.fallback === 'full' && fullButton) fullButton.hidden = false;
+        throw new Error(status.error || 'Máy chủ không tải được tệp.');
+      }
       if (jobText) jobText.textContent = status.status === 'queued' ?
         'Đang chờ máy chủ xử lý...' : 'Đang tải video, vui lòng giữ trang mở...';
       pollTimer = setTimeout(function () {
@@ -214,5 +223,9 @@ if (shareButton) shareButton.addEventListener('click', function () {
     if (err && err.name === 'AbortError') return; // The user closed the sheet.
     setMessage('Không mở được bảng chia sẻ. Hãy dùng “Tải tệp về máy”.', 'info');
   });
+});
+if (fullButton) fullButton.addEventListener('click', function () {
+  // Stream failed: retry as a full download through the server.
+  return startDownload('video', 'full');
 });
 })();
