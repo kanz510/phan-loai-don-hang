@@ -10,7 +10,7 @@ var inspectButton = $('dlInspect'), inspectLabel = $('dlInspectLabel');
 var pasteButton = $('dlPaste'), resetButton = $('dlReset');
 var jobStatus = $('dlJobStatus'), jobText = $('dlJobText'), fileReady = $('dlFileReady');
 var videoButton = $('dlVideo'), audioButton = $('dlAudio');
-var activeUrl = '', busy = false, pollTimer = null;
+var activeUrl = '', busy = false, pollTimer = null, requestId = 0, downloading = false;
 if (!form) return;
 
 function setMessage(text, type) {
@@ -24,6 +24,32 @@ function setBusy(loading) {
   if (inspectButton) inspectButton.disabled = loading;
   if (inspectLabel) inspectLabel.textContent = loading ? 'Đang tìm nội dung...' : 'Kiểm tra';
 }
+function resetDownloadState(clearInput) {
+  // Ignore old inspections, downloads and image requests after changing the link.
+  requestId++;
+  if (pollTimer) clearTimeout(pollTimer);
+  pollTimer = null;
+  activeUrl = '';
+  if (clearInput) input.value = '';
+  if (result) result.hidden = true;
+  if (actions) actions.hidden = true;
+  if (jobText) jobText.textContent = '';
+  if (fileReady) {
+    fileReady.hidden = true;
+    fileReady.removeAttribute('href');
+    fileReady.removeAttribute('download');
+  }
+  var thumb = $('dlThumb'), placeholder = $('dlThumbPlaceholder');
+  if (thumb) {
+    thumb.onload = null;
+    thumb.onerror = null;
+    thumb.removeAttribute('src');
+    thumb.hidden = true;
+  }
+  if (placeholder) placeholder.hidden = false;
+  setBusy(false);
+  setDownloadBusy(false);
+}
 function validateLink(text) {
   var match = text.match(/https?:\/\/[^\s<>"']+/i);
   if (!match) throw new Error('Hãy dán liên kết video TikTok hoặc Douyin.');
@@ -33,7 +59,7 @@ function validateLink(text) {
   if (!/^(https?):$/.test(url.protocol) || !/(^|\.)(tiktok\.com|douyin\.com|iesdouyin\.com)$/i.test(url.hostname)) {
     throw new Error('Chỉ nhận liên kết TikTok hoặc Douyin.');
   }
-  return text;
+  return url.href;
 }
 async function api(path, body) {
   var response;
@@ -69,8 +95,9 @@ function showResult(data) {
     thumb.hidden = true;
     placeholder.hidden = false;
     if (data.thumbnail && /^https:\/\//i.test(data.thumbnail)) {
-      thumb.onload = function () { thumb.hidden = false; placeholder.hidden = true; };
-      thumb.onerror = function () { thumb.hidden = true; placeholder.hidden = false; };
+      var imageRequest = requestId;
+      thumb.onload = function () { if (imageRequest === requestId) { thumb.hidden = false; placeholder.hidden = true; } };
+      thumb.onerror = function () { if (imageRequest === requestId) { thumb.hidden = true; placeholder.hidden = false; } };
       thumb.src = data.thumbnail;
     }
   }
@@ -82,24 +109,33 @@ function showResult(data) {
 }
 form.addEventListener('submit', async function (e) {
   e.preventDefault();
-  if (busy) return;
+  if (busy || downloading) return;
+  var url;
+  try { url = validateLink(input.value.trim()); }
+  catch (err) { setMessage(err.message); return; }
+  resetDownloadState(false);
   setMessage('');
-  if (result) result.hidden = true;
-  if (actions) actions.hidden = true;
-  if (pollTimer) clearTimeout(pollTimer);
-  var text = input.value.trim();
-  try { validateLink(text); } catch (err) { setMessage(err.message); return; }
+  var ticket = requestId;
   setBusy(true);
   try {
-    var data = await api('/api/inspect', { url: text });
-    activeUrl = text;
+    var data = await api('/api/inspect', { url: url });
+    if (ticket !== requestId) return;
+    activeUrl = url;
     showResult(data);
-  } catch (err) { setMessage(err.message); }
-  finally { setBusy(false); }
+  } catch (err) {
+    if (ticket === requestId) setMessage(err.message);
+  } finally {
+    if (ticket === requestId) setBusy(false);
+  }
+});
+if (input) input.addEventListener('input', function () {
+  resetDownloadState(false);
+  setMessage('');
 });
 if (pasteButton) pasteButton.addEventListener('click', async function () {
   try {
     var value = await navigator.clipboard.readText();
+    resetDownloadState(false);
     input.value = value;
     input.focus();
     setMessage('');
@@ -109,33 +145,46 @@ if (pasteButton) pasteButton.addEventListener('click', async function () {
   }
 });
 if (resetButton) resetButton.addEventListener('click', function () {
-  if (result) result.hidden = true;
-  if (actions) actions.hidden = true;
-  if (jobStatus) jobStatus.hidden = true;
-  if (fileReady) fileReady.hidden = true;
-  if (pollTimer) clearTimeout(pollTimer);
+  resetDownloadState(true);
+  input.focus();
   setMessage('');
 });
 function setDownloadBusy(value) {
+  downloading = value;
   if (videoButton) videoButton.disabled = value;
   if (audioButton) audioButton.disabled = value;
   if (jobStatus) jobStatus.hidden = !value;
 }
 async function startDownload(kind) {
-  if (!activeUrl || (videoButton && videoButton.disabled)) return;
+  if (!activeUrl || downloading || busy) return;
+  var ticket = requestId;
+  var url = activeUrl;
   setMessage('');
-  if (fileReady) fileReady.hidden = true;
+  if (fileReady) { fileReady.hidden = true; fileReady.removeAttribute('href'); }
   setDownloadBusy(true);
   if (jobText) jobText.textContent = 'Đang chuẩn bị tải ' + (kind === 'audio' ? 'MP3' : 'video') + '...';
   try {
-    var started = await api('/api/download', { url: activeUrl, type: kind });
+    var started = await api('/api/download', { url: url, type: kind });
+    if (ticket !== requestId) return;
+    if (!started || typeof started.job_id !== 'string' || !started.job_id) {
+      throw new Error('Máy chủ chưa trả mã tác vụ tải. Vui lòng thử lại.');
+    }
     var checks = 0;
     var poll = async function () {
+      if (ticket !== requestId) return;
       if (++checks > 95) throw new Error('Xử lý quá lâu, vui lòng thử lại.');
       var status = await api('/api/jobs/' + encodeURIComponent(started.job_id));
+      if (ticket !== requestId) return;
       if (status.status === 'ready') {
+        // Only use relative paths on the configured download server.
+        var path = status.download_url;
+        if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) {
+          throw new Error('Máy chủ trả đường dẫn tải không hợp lệ.');
+        }
+        var downloadHref = new URL(path, DL_API);
+        if (downloadHref.origin !== DL_API) throw new Error('Máy chủ trả đường dẫn tải không hợp lệ.');
         setDownloadBusy(false);
-        fileReady.href = DL_API + status.download_url;
+        fileReady.href = downloadHref.href;
         fileReady.download = 'HimTik-' + kind;
         fileReady.hidden = false;
         setMessage('Tệp đã sẵn sàng. Chạm nút bên dưới để tải về, đặc biệt trên iPhone.', 'info');
@@ -143,13 +192,22 @@ async function startDownload(kind) {
       }
       if (status.status === 'error') throw new Error(status.error || 'Không thể tải tệp.');
       if (jobText) jobText.textContent = status.status === 'queued' ? 'Đang chờ lượt xử lý...' : 'Đang tải và xử lý tệp, vui lòng giữ trang mở...';
-      pollTimer = setTimeout(async function () {
-        try { await poll(); } catch (err) { setDownloadBusy(false); setMessage(err.message); }
+      pollTimer = setTimeout(function () {
+        if (ticket !== requestId) return;
+        poll().catch(function (err) {
+          if (ticket !== requestId) return;
+          setDownloadBusy(false);
+          setMessage(err.message);
+        });
       }, 1800);
     };
     await poll();
-  } catch (err) { setDownloadBusy(false); setMessage(err.message); }
+  } catch (err) {
+    if (ticket !== requestId) return;
+    setDownloadBusy(false);
+    setMessage(err.message);
+  }
 }
-if (videoButton) videoButton.addEventListener('click', function () { startDownload('video'); });
-if (audioButton) audioButton.addEventListener('click', function () { startDownload('audio'); });
+if (videoButton) videoButton.addEventListener('click', function () { return startDownload('video'); });
+if (audioButton) audioButton.addEventListener('click', function () { return startDownload('audio'); });
 })();
