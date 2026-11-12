@@ -414,3 +414,32 @@ a.commission-reminder:focus-visible{outline:2px solid #a74359;outline-offset:4px
  .dl-primary-actions button{min-width:0;font-size:12px;padding:11px 8px}
  .dl-ready-actions>*{width:100%;justify-content:center;text-align:center}
 }
+
+
+/* Autocomplete ten hang duoc lay tu don cu, ho tro bottom sheet tren iPhone. */
+.item-suggest-field{position:relative;z-index:4}
+.item-suggestions{
+ position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:80;
+ max-height:min(260px,38dvh);overflow-y:auto;overscroll-behavior:contain;
+ display:grid;gap:2px;padding:5px;border-radius:14px;
+ background:#fffdfb;border:1px solid #e9cfc4;
+ box-shadow:0 12px 30px #593e362c;-webkit-overflow-scrolling:touch
+}
+.item-suggestions[hidden]{display:none!important}
+.item-suggestion{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ min-height:43px;padding:9px 11px;border-radius:10px;
+ color:#67483f;font-size:13px;line-height:1.5;cursor:pointer
+}
+.item-suggestion[aria-selected=true],.item-suggestion:hover{background:#fff0e9}
+.item-suggestion-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650}
+.item-suggestion-count{flex-shrink:0;color:#9c7b6b;font-size:11px}
+html[data-kem-may-theme=liquid] .item-suggestions{
+ background:rgba(255,249,253,.96);border-color:#eacbdc;
+ box-shadow:0 14px 30px #8e4f7632;
+ -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)
+}
+html[data-kem-may-theme=liquid] .item-suggestion{color:#70475d}
+html[data-kem-may-theme=liquid] .item-suggestion[aria-selected=true],
+html[data-kem-may-theme=liquid] .item-suggestion:hover{background:#fbe5ef}
+@media(max-width:540px){.item-suggestion{min-height:44px;font-size:12px}.item-suggestion-count{font-size:10px}}
