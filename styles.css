@@ -495,3 +495,94 @@ html[data-kem-may-theme=liquid] .item-suggestion:hover{background:#fbe5ef}
 @media (prefers-reduced-motion:reduce){
  .may-chat .may-chat-launch .em-kem-poodle{animation:none!important;transition:none!important}
 }
+
+
+/* Autonomous Em Kem theater v2: five randomly scheduled actions, CSS only. */
+.may-chat-launch{overflow:visible}
+.em-kem-fx{position:absolute;inset:0;z-index:2;display:block;pointer-events:none;overflow:visible}
+.em-kem-fx>span{position:absolute;display:block;opacity:0;pointer-events:none}
+.may-chat .em-kem-poodle{transform-origin:50% 88%;will-change:auto}
+@keyframes kem-hiphop{
+ 0%,100%{transform:translate3d(0,0,0) rotate(0)}
+ 12%{transform:translate3d(-5px,-10px,0) rotate(-12deg)}
+ 24%{transform:translate3d(5px,0,0) rotate(13deg)}
+ 36%{transform:translate3d(-5px,-14px,0) rotate(-13deg)}
+ 48%{transform:translate3d(5px,0,0) rotate(14deg)}
+ 60%{transform:translate3d(-4px,-10px,0) rotate(-10deg)}
+ 72%{transform:translate3d(5px,0,0) rotate(12deg)}
+ 84%{transform:translate3d(0,-6px,0) rotate(-4deg)}
+}
+@keyframes kem-pee-pose{
+ 0%,100%{transform:rotate(0) translateY(0)}
+ 20%,80%{transform:rotate(-11deg) translateY(1px) scaleX(.98)}
+}
+@keyframes kem-bone-bounce{
+ 0%,100%{transform:translateY(0) rotate(0)}
+ 25%{transform:translate(-3px,-7px) rotate(-8deg)}
+ 50%{transform:translate(4px,-2px) rotate(8deg)}
+ 75%{transform:translate(-2px,-10px) rotate(-5deg)}
+}
+@keyframes kem-money-sway{
+ 0%,100%{transform:rotate(0) translateY(0)}
+ 20%,60%{transform:rotate(-14deg) translateY(-3px)}
+ 40%,80%{transform:rotate(14deg) translateY(-8px)}
+}
+@keyframes kem-pray-bow{
+ 0%,100%{transform:translateY(0) rotate(0)}
+ 30%,65%{transform:translateY(4px) rotate(6deg)}
+}
+@keyframes kem-pop{0%,12%,90%,100%{opacity:0;transform:translateY(6px) scale(.65)}24%,75%{opacity:1;transform:translateY(-3px) scale(1)}}
+@keyframes kem-bone-toss{
+ 0%,100%{opacity:0;transform:translate(0,12px) rotate(-35deg) scale(.7)}
+ 12%{opacity:1}
+ 35%{opacity:1;transform:translate(-30px,-38px) rotate(100deg) scale(1.18)}
+ 63%{opacity:1;transform:translate(16px,-17px) rotate(310deg) scale(.93)}
+ 85%{opacity:1;transform:translate(-5px,10px) rotate(390deg)}
+}
+@keyframes kem-cash-fly{
+ 0%,100%{opacity:0;transform:translate(-5px,10px) scale(.4) rotate(-30deg)}
+ 17%{opacity:1}
+ 65%{opacity:1;transform:translate(-60px,-50px) scale(1.1) rotate(35deg)}
+ 88%{opacity:0;transform:translate(-92px,-75px) scale(.7) rotate(80deg)}
+}
+@keyframes kem-cash-fly-two{
+ 0%,15%,100%{opacity:0;transform:translate(0,0) scale(.4) rotate(0)}
+ 28%{opacity:1}
+ 68%{opacity:1;transform:translate(43px,-53px) scale(1) rotate(65deg)}
+ 94%{opacity:0;transform:translate(64px,-85px) scale(.6) rotate(110deg)}
+}
+@keyframes kem-waterfall{
+ 0%,15%,90%,100%{opacity:0;transform:scaleY(.1)}
+ 28%,78%{opacity:.75;transform:scaleY(1)}
+}
+@keyframes kem-aura{
+ 0%,100%{opacity:0;transform:translateY(9px) scale(.7)}
+ 25%,75%{opacity:1;transform:translateY(-8px) scale(1.12)}
+}
+.may-chat[data-pet-state="hiphop"] .em-kem-poodle{animation:kem-hiphop 1.1s ease-in-out infinite!important}
+.may-chat[data-pet-state="hiphop"] .kem-fx-note{left:-4px;top:2px;font-size:24px;animation:kem-pop 1.2s ease-in-out infinite}
+.may-chat[data-pet-state="pee"] .em-kem-poodle{animation:kem-pee-pose 2.4s ease-in-out infinite!important}
+.may-chat .kem-fx-pee{width:3px;height:37px;left:67%;bottom:-20px;border-radius:50%;background:linear-gradient(#c6eaff,#77cbea 70%,transparent);transform-origin:top;filter:drop-shadow(0 0 2px #a4def5)}
+.may-chat[data-pet-state="pee"] .kem-fx-pee{animation:kem-waterfall 1.8s linear infinite}
+.may-chat[data-pet-state="bone"] .em-kem-poodle{animation:kem-bone-bounce .9s ease-in-out infinite!important}
+.may-chat .kem-fx-bone{left:14px;bottom:17px;font-size:27px}
+.may-chat[data-pet-state="bone"] .kem-fx-bone{animation:kem-bone-toss 2.9s ease-in-out infinite}
+.may-chat[data-pet-state="money"] .em-kem-poodle{animation:kem-money-sway .85s ease-in-out infinite!important}
+.may-chat .kem-fx-cash{left:65%;bottom:25px;font-size:25px}
+.may-chat[data-pet-state="money"] .kem-fx-cash{animation:kem-cash-fly 2.4s ease-out infinite}
+.may-chat[data-pet-state="money"] .kem-fx-cash-two{animation:kem-cash-fly-two 2.4s ease-out .4s infinite}
+.may-chat[data-pet-state="pray"] .em-kem-poodle{animation:kem-pray-bow 3s ease-in-out infinite!important}
+.may-chat .kem-fx-prayer{left:39%;bottom:5px;font-size:25px}
+.may-chat .kem-fx-halo{left:45%;top:-12px;font-size:22px;color:#d8ac43;text-shadow:0 0 8px #ffd978}
+.may-chat[data-pet-state="pray"] .kem-fx-prayer{animation:kem-aura 3s ease-in-out infinite}
+.may-chat[data-pet-state="pray"] .kem-fx-halo{animation:kem-aura 3s ease-in-out .4s infinite}
+/* No manual animation chooser. Keep the mascot available to open chat. */
+.may-chat .em-kem-care{display:none!important}
+.may-chat.em-kem-dragging .em-kem-poodle,
+.may-chat .may-chat-launch[aria-expanded="true"] .em-kem-poodle{animation:none!important}
+.may-chat.em-kem-dragging .em-kem-fx,
+.may-chat .may-chat-launch[aria-expanded="true"] .em-kem-fx{display:none}
+@media (prefers-reduced-motion:reduce){
+ .may-chat .em-kem-poodle,.may-chat .em-kem-fx *{animation:none!important;transition:none!important}
+ .may-chat .em-kem-fx{display:none!important}
+}
