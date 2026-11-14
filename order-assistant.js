@@ -156,83 +156,55 @@
  function resetChat(){if(!window.confirm('Xóa toàn bộ lịch sử trò chuyện với Em Kem và bắt đầu lại?\n\nThao tác này không thể hoàn tác.'))return;epoch++;controller?.abort();controller=null;lock(false);history=[];input.value='';messages.replaceChildren();add('Chào May! 🫶🏻 '+help);input.focus();}
  window.mayChatSync=()=>{const next=authorized?activeUser?.id:null;if(identity!==next){identity=next;epoch++;controller?.abort();controller=null;lock(false);history=[];modeTouched=false;$('chatMode').value='quick';modeInfo();$('chatConnection').textContent='Đang kiểm tra kết nối AI…';messages.replaceChildren();input.value='';panel.hidden=true;launcher.setAttribute('aria-expanded','false');if(next){if(!restoreConversation())add('Chào May! 🫶🏻 '+help);checkAI(epoch);}}host.hidden=!authorized;if(authorized)startBubble();else if(bubbleTimer){clearInterval(bubbleTimer);bubbleTimer=null;}placeMascot();};
 
- // Keep the mascot still when the visitor requests reduced motion.
- const mascot=host.querySelector('.em-kem-poodle'),motion=window.matchMedia('(prefers-reduced-motion: reduce)');
-
- // Local pet activities never call the AI or touch order data.
- const care=document.createElement('div');care.className='em-kem-care';
- care.innerHTML='<button type="button" class="em-kem-care-toggle" aria-label="Chăm Em Kem" aria-expanded="false" aria-controls="emKemCare">🐾</button><div id="emKemCare" class="em-kem-care-menu" aria-label="Chăm Em Kem" hidden><strong>Chăm Em Kem</strong><button type="button" data-pet-action="auto" aria-pressed="true">Tự động · random ✓</button><button type="button" data-pet-action="walk">Đi dạo</button><button type="button" data-pet-action="eat">Cho ăn</button><button type="button" data-pet-action="drink">Cho uống</button><button type="button" data-pet-action="sleep">Đi ngủ</button><button type="button" data-pet-action="stay" aria-pressed="false">Ở yên</button></div>';
- host.append(care);
- const careToggle=care.querySelector('.em-kem-care-toggle'),careMenu=care.querySelector('.em-kem-care-menu'),stayButton=care.querySelector('[data-pet-action="stay"]'),petBubble=host.querySelector('.em-kem-bubble');
- let petState='sit',petTimer=0,walkFrame=0,roaming=true,petPauseUntil=0,petLastTime=0,lastAutoAction='';
- // Every page starts in automatic mode; Stay pauses only the current visit.
+ // Lightweight autonomous mascot theater. All actions are visual only.
+ // Keep chat, Supabase and order data completely separate from the animations.
+ const mascot=host.querySelector('.em-kem-poodle');
+ const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
+ const fx=document.createElement('span');
+ fx.className='em-kem-fx';fx.setAttribute('aria-hidden','true');
+ fx.innerHTML='<span class="kem-fx-bone">🦴</span><span class="kem-fx-cash">💸</span><span class="kem-fx-cash kem-fx-cash-two">💵</span><span class="kem-fx-prayer">🙏</span><span class="kem-fx-halo">✦</span><span class="kem-fx-pee"></span><span class="kem-fx-note">♫</span>';
+ launcher.append(fx);
+ const actions=['hiphop','pee','bone','money','pray'];
+ const actionLength={hiphop:6200,pee:5200,bone:6200,money:6100,pray:7200};
+ let petState='sit',petTimer=0,petEndTimer=0,lastAutoAction='';
  function setPetState(state){
   petState=state;host.dataset.petState=state;
-  // Keep the approved transparent realistic mascot for every care state.
-  // CSS animates state changes without swapping back to old cartoon sprites.
   if(!mascot.src.endsWith('/em-kem-realistic.svg'))mascot.src='assets/em-kem-realistic.svg';
  }
- function updateStay(){stayButton.setAttribute('aria-pressed',String(!roaming));stayButton.textContent=roaming?'Ở yên':'Đang ở yên ✓';const autoButton=care.querySelector('[data-pet-action="auto"]');autoButton.setAttribute('aria-pressed',String(roaming));autoButton.textContent=roaming?'Tự động · random ✓':'Bật tự động · random';}
- function persistRoaming(){updateStay();}
  function petBlocked(){
   const focused=document.activeElement;
-  return host.hidden||document.hidden||!panel.hidden||drag||!careMenu.hidden||motion.matches||(focused&&focused.matches('input,textarea,select,[contenteditable="true"]'))||Date.now()<petPauseUntil;
+  return host.hidden||document.hidden||!panel.hidden||drag||motion.matches||
+   (focused&&focused.matches('input,textarea,select,[contenteditable="true"]'));
  }
- function schedulePet(delay=6000+Math.random()*5000){clearTimeout(petTimer);petTimer=setTimeout(petRoutine,delay);}
- function stopPet(pause=0){clearTimeout(petTimer);cancelAnimationFrame(walkFrame);walkFrame=0;petPauseUntil=Math.max(petPauseUntil,Date.now()+pause);mascot.style.transform='';setPetState('sit');}
- function positionCare(){
-  if(careMenu.hidden)return;
-  const r=launcher.getBoundingClientRect(),w=careMenu.offsetWidth,h=careMenu.offsetHeight;
-  careMenu.style.left=clamp(r.right-w,12,innerWidth-w-12)+'px';
-  careMenu.style.top=clamp(r.top-h-10,12,innerHeight-h-12)+'px';
+ function schedulePet(delay=3500+Math.random()*4000){
+  clearTimeout(petTimer);
+  if(host.hidden||document.hidden||motion.matches)return;
+  petTimer=setTimeout(petRoutine,delay);
  }
- function closeCare(){careMenu.hidden=true;careToggle.setAttribute('aria-expanded','false');}
- function startWalk(manual=false){
-  stopPet();if(petBlocked()){schedulePet();return;}
-  placeMascot();const start=mascotPosition.x,r=launcher.getBoundingClientRect();
-  const direction=start>innerWidth/2?-1:1,target=clamp(start+direction*(60+Math.random()*55),12,innerWidth-r.width-12);
-  if(Math.abs(target-start)<8){schedulePet();return;}
-  setPetState('walk');mascot.style.transform=direction<0?'scaleX(-1)':'';
-  let travelled=0;petLastTime=0;
-  const step=timestamp=>{
-   if(petBlocked()||(!roaming&&!manual)){stopPet();schedulePet();return;}
-   if(!petLastTime)petLastTime=timestamp;
-   travelled+=Math.min(50,timestamp-petLastTime)*0.025;petLastTime=timestamp;
-   mascotPosition.x=start+Math.sign(target-start)*Math.min(travelled,Math.abs(target-start));placeMascot();
-   if(travelled<Math.abs(target-start))walkFrame=requestAnimationFrame(step);
-   else{stopPet();schedulePet();}
-  };
-  walkFrame=requestAnimationFrame(step);
- }
- function petActivity(state){
-  stopPet();setPetState(state);
-  petTimer=setTimeout(()=>{stopPet();schedulePet();},state==='sleep'?12000:6000);
+ function stopPet(){
+  clearTimeout(petTimer);clearTimeout(petEndTimer);
+  setPetState('sit');
  }
  function petRoutine(){
-  if(!roaming||petBlocked()){schedulePet();return;}
-  const choices=['walk','sit','sleep','eat','drink'].filter(action=>action!==lastAutoAction);
-  const action=choices[Math.floor(Math.random()*choices.length)];lastAutoAction=action;
-  if(action==='walk')startWalk();else if(action==='sit'){setPetState('sit');schedulePet();}else petActivity(action);
+  if(petBlocked()){stopPet();schedulePet(4000);return;}
+  const choices=actions.filter(name=>name!==lastAutoAction);
+  const action=choices[Math.floor(Math.random()*choices.length)];
+  lastAutoAction=action;setPetState(action);
+  petEndTimer=setTimeout(()=>{setPetState('sit');schedulePet();},actionLength[action]);
  }
- careToggle.addEventListener('click',()=>{
-  const show=careMenu.hidden;stopPet();careMenu.hidden=!show;careToggle.setAttribute('aria-expanded',String(show));positionCare();if(!show)schedulePet();
+ // Do not animate behind the chat, during dragging, in background tabs,
+ // while typing or when the iOS user prefers reduced motion.
+ document.addEventListener('visibilitychange',()=>{
+  stopPet();if(!document.hidden)schedulePet(1800);
  });
- careMenu.addEventListener('click',event=>{
-  const button=event.target.closest('[data-pet-action]');if(!button)return;
-  const action=button.dataset.petAction;closeCare();
-  if(action==='auto'){roaming=true;persistRoaming();stopPet();petPauseUntil=0;schedulePet(500);}
-  else if(action==='stay'){roaming=!roaming;persistRoaming();stopPet();schedulePet();}
-  else if(action==='walk'){roaming=true;persistRoaming();petPauseUntil=0;startWalk(true);}
-  else petActivity(action);
+ document.addEventListener('focusin',event=>{
+  if(event.target.matches('input,textarea,select,[contenteditable="true"]'))stopPet();
  });
- care.addEventListener('keydown',event=>{if(event.key==='Escape'){closeCare();careToggle.focus();schedulePet();}});
- document.addEventListener('pointerdown',event=>{if(!care.contains(event.target))closeCare();});
- document.addEventListener('focusin',event=>{if(event.target.matches('input,textarea,select,[contenteditable="true"]')){stopPet(8000);schedulePet();}});
- document.addEventListener('visibilitychange',()=>{stopPet();if(!document.hidden)schedulePet();});
- window.addEventListener('resize',()=>{stopPet();positionCare();schedulePet();});
- launcher.addEventListener('pointerdown',()=>{stopPet(30000);schedulePet();});
+ document.addEventListener('focusout',()=>schedulePet(3000));
+ launcher.addEventListener('pointerdown',()=>{stopPet();schedulePet(3500);});
+ window.addEventListener('resize',()=>{stopPet();schedulePet(3000);});
  motion.addEventListener?.('change',()=>{stopPet();schedulePet();});
- updateStay();setPetState('sit');schedulePet(3500);
+ setPetState('sit');schedulePet(2200);
 
  // A short synthesized woof, only after a deliberate click; never autoplay.
  let barkAudio=null,lastBark=0;
