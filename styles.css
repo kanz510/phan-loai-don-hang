@@ -586,3 +586,57 @@ html[data-kem-may-theme=liquid] .item-suggestion:hover{background:#fbe5ef}
  .may-chat .em-kem-poodle,.may-chat .em-kem-fx *{animation:none!important;transition:none!important}
  .may-chat .em-kem-fx{display:none!important}
 }
+
+
+/* Em Kem frame-by-frame sprite v3.
+   15 hand-posed illustration frames: 3 columns x 5 actions.
+   Background positions animate discrete poses, not a rigid photo transform. */
+.may-chat .may-chat-launch .em-kem-poodle{
+  --kem-row:0px;
+  display:block;
+  flex:0 0 80px;
+  width:80px!important;
+  height:80px!important;
+  margin:0 auto 4px;
+  padding:0;
+  background-image:url("https://d2ol7oe51mr4n9.cloudfront.net/user_3M6ySLfoAp9wyKgDk0iBJsLlKot/d3c6a227-5bd1-47e7-a474-69ace26a13e5.png");
+  background-repeat:no-repeat;
+  background-size:240px 400px;
+  background-position:0 0;
+  object-fit:unset;
+  transform:none!important;
+  filter:drop-shadow(0 3px 3px rgba(74,39,35,.17));
+  image-rendering:auto;
+}
+.may-chat .em-kem-fx{display:none!important} /* effects are painted into the frames */
+@keyframes kem-sprite-3{
+  0%,100%{background-position:0 var(--kem-row)}
+  33.333%{background-position:-80px var(--kem-row)}
+  66.666%{background-position:-160px var(--kem-row)}
+}
+.may-chat[data-pet-state="sit"] .em-kem-poodle{
+  --kem-row:0px;
+  background-position:0 0;
+  animation:none!important;
+}
+.may-chat[data-pet-state="hiphop"] .em-kem-poodle{--kem-row:0px}
+.may-chat[data-pet-state="pee"] .em-kem-poodle{--kem-row:-80px}
+.may-chat[data-pet-state="bone"] .em-kem-poodle{--kem-row:-160px}
+.may-chat[data-pet-state="money"] .em-kem-poodle{--kem-row:-240px}
+.may-chat[data-pet-state="pray"] .em-kem-poodle{--kem-row:-320px}
+.may-chat[data-pet-state="hiphop"] .may-chat-launch[aria-expanded="false"] .em-kem-poodle,
+.may-chat[data-pet-state="pee"] .may-chat-launch[aria-expanded="false"] .em-kem-poodle,
+.may-chat[data-pet-state="bone"] .may-chat-launch[aria-expanded="false"] .em-kem-poodle,
+.may-chat[data-pet-state="money"] .may-chat-launch[aria-expanded="false"] .em-kem-poodle,
+.may-chat[data-pet-state="pray"] .may-chat-launch[aria-expanded="false"] .em-kem-poodle{
+  animation:kem-sprite-3 1.35s steps(1,end) infinite!important;
+  animation-play-state:running!important;
+}
+.may-chat.em-kem-dragging .may-chat-launch .em-kem-poodle,
+.may-chat .may-chat-launch[aria-expanded="true"] .em-kem-poodle{
+  animation:none!important;
+  background-position:0 0;
+}
+@media (prefers-reduced-motion:reduce){
+ .may-chat .may-chat-launch .em-kem-poodle{animation:none!important;background-position:0 0!important}
+}
