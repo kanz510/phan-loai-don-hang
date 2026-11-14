@@ -78,9 +78,15 @@
  function dockPanelToKeyboard(){
   const vv=window.visualViewport;if(!vv||panel.hidden)return;
   const gap=12,w=panel.getBoundingClientRect().width;
-  panel.style.maxHeight=Math.max(80,vv.height-gap*2)+'px';
+  // Keep the composer above the iOS keyboard without moving the entire chat
+  // to the top of the visual viewport. Fixed coordinates are layout-relative.
+  const visibleTop=vv.offsetTop+gap;
+  const visibleBottom=vv.offsetTop+vv.height-gap;
+  const available=Math.max(80,visibleBottom-visibleTop);
+  panel.style.maxHeight=available+'px';
+  const h=panel.getBoundingClientRect().height;
   panel.style.left=clamp(parseFloat(panel.style.left)||0,vv.offsetLeft+gap,vv.offsetLeft+vv.width-w-gap)+'px';
-  panel.style.top=(vv.offsetTop+gap)+'px';
+  panel.style.top=Math.max(visibleTop,visibleBottom-h)+'px';
  }
  function handleViewportChange(){
   const vv=window.visualViewport;
@@ -124,7 +130,7 @@
   const moves={ArrowLeft:[-16,0],ArrowRight:[16,0],ArrowUp:[0,-16],ArrowDown:[0,16]};
   if(!moves[event.key])return;event.preventDefault();placeMascot();const [dx,dy]=moves[event.key];mascotPosition={x:mascotPosition.x+dx,y:mascotPosition.y+dy};placeMascot();saveMascot();
  });
- window.addEventListener('resize',handleViewportChange);window.visualViewport?.addEventListener('resize',handleViewportChange);
+ window.addEventListener('resize',handleViewportChange);window.visualViewport?.addEventListener('resize',handleViewportChange);window.visualViewport?.addEventListener('scroll',handleViewportChange);
  input.addEventListener('focus',handleViewportChange);input.addEventListener('blur',handleViewportChange);
 
  function open(value){stopPet();closeCare();if(!value)schedulePet();panel.hidden=!value;launcher.setAttribute('aria-expanded',String(value));if(value){placePanel();input.focus();}else launcher.focus();saveConversation();}
