@@ -134,7 +134,7 @@
  input.addEventListener('focus',handleViewportChange);input.addEventListener('blur',handleViewportChange);
 
  function open(value){stopPet();closeCare();if(!value)schedulePet();panel.hidden=!value;launcher.setAttribute('aria-expanded',String(value));if(value){placePanel();input.focus();}else launcher.focus();saveConversation();}
- function resetChat(){epoch++;controller?.abort();controller=null;lock(false);history=[];input.value='';messages.replaceChildren();add('Chào May! 🫶🏻 '+help);input.focus();}
+ function resetChat(){if(!window.confirm('Xóa toàn bộ lịch sử trò chuyện với Em Kem và bắt đầu lại?\n\nThao tác này không thể hoàn tác.'))return;epoch++;controller?.abort();controller=null;lock(false);history=[];input.value='';messages.replaceChildren();add('Chào May! 🫶🏻 '+help);input.focus();}
  window.mayChatSync=()=>{const next=authorized?activeUser?.id:null;if(identity!==next){identity=next;epoch++;controller?.abort();controller=null;lock(false);history=[];modeTouched=false;$('chatMode').value='quick';modeInfo();$('chatConnection').textContent='Đang kiểm tra kết nối AI…';messages.replaceChildren();input.value='';panel.hidden=true;launcher.setAttribute('aria-expanded','false');if(next){if(!restoreConversation())add('Chào May! 🫶🏻 '+help);checkAI(epoch);}}host.hidden=!authorized;placeMascot();};
 
  // Keep the mascot still when the visitor requests reduced motion.
