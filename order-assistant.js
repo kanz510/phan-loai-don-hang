@@ -6,7 +6,7 @@
  document.body.append(host);
  const launcher=$('chatLauncher'),panel=$('chatPanel'),input=$('chatInput'),messages=$('chatMessages');
  const bubble=host.querySelector('.em-kem-bubble');
- const bubbleFallbacks=['May ơiii, Kem đây! 🐾','May có nhớ Kem hong? 💗','Kem đang đợi May nè!','May ơi, chơi với Kem xíu! 🐩','May làm việc nhớ nghỉ nha!','Kem thương May nhất luôn!'];
+ const bubbleFallbacks=['May ơi, hôm nay slay chưa? 💅','Kem xin một vé flex nhẹ nè!','Ủa alo, May xinh quá trời!','May ơi, nay hệ điều hành dễ thương!','Kem đang ở chế độ xàm xí 🐩','Nay May keo lì quá chừng!','May ơi, chuyện gì cũng từ từ nha!','Độ đáng yêu đang vượt KPI 💗','Kem có miếng hài hơi ngang nè!','Tín hiệu vũ trụ: May cần chill!','Kem online, drama offline nha!','May ơi, cho Kem hóng xíu!'];
  let bubbleTimer=null,bubbleBusy=false;
  const nextFallback=()=>bubbleFallbacks[Math.floor(Math.random()*bubbleFallbacks.length)];
  async function refreshBubble(){
@@ -22,7 +22,7 @@
   }catch{bubble.textContent=nextFallback();}
   finally{bubbleBusy=false;}
  }
- function startBubble(){if(bubbleTimer)return;bubble.textContent=nextFallback();refreshBubble();bubbleTimer=setInterval(refreshBubble,90000);}
+ function startBubble(){if(bubbleTimer)return;bubble.textContent=nextFallback();refreshBubble();bubbleTimer=setInterval(refreshBubble,30000);}
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshBubble();});
  const help='Bạn có thể hỏi “Đơn chưa giao”, “Hoa hồng tháng này”, “Tổng quan hôm nay”, “Đơn đã hủy tháng 10/2026”, “Tổng quan năm 2026” hoặc “Tìm đơn của Lan”. Tôi chỉ tra cứu, không sửa hay hủy đơn.';
  let identity=null,epoch=0,pending=false,controller=null,history=[],modeTouched=false;
@@ -166,12 +166,10 @@
  const careToggle=care.querySelector('.em-kem-care-toggle'),careMenu=care.querySelector('.em-kem-care-menu'),stayButton=care.querySelector('[data-pet-action="stay"]'),petBubble=host.querySelector('.em-kem-bubble');
  let petState='sit',petTimer=0,walkFrame=0,roaming=true,petPauseUntil=0,petLastTime=0,lastAutoAction='';
  // Every page starts in automatic mode; Stay pauses only the current visit.
- const petLabels={sit:'May cần giúp gì ?',walk:'Kem đi dạo xíu nha!',sleep:'Kem ngủ một chút nha…',eat:'Măm măm… ngon quá!',drink:'Kem uống nước nè!'};
  function setPetState(state){
   petState=state;host.dataset.petState=state;
   const file=motion.matches?'em-kem-poodle.webp':'em-kem-'+state+'.webp';
   if(!mascot.src.endsWith('/'+file))mascot.src='assets/'+file;
-  petBubble.textContent=petLabels[state]||petLabels.sit;
  }
  function updateStay(){stayButton.setAttribute('aria-pressed',String(!roaming));stayButton.textContent=roaming?'Ở yên':'Đang ở yên ✓';const autoButton=care.querySelector('[data-pet-action="auto"]');autoButton.setAttribute('aria-pressed',String(roaming));autoButton.textContent=roaming?'Tự động · random ✓':'Bật tự động · random';}
  function persistRoaming(){updateStay();}
