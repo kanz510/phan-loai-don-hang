@@ -26,7 +26,7 @@
   try{
    messages.replaceChildren();history=saved.history.map(m=>({role:m.role,content:m.content}));
    $('chatMode').value=saved.mode==='ai'?'ai':'quick';modeTouched=true;modeInfo();
-   for(const m of saved.transcript)add(m.text,m.who,safeChatLink(m.href));
+   for(const m of saved.transcript){if(m.who==='bot source')continue;add(m.text,m.who,safeChatLink(m.href));}
    input.value=typeof saved.draft==='string'?saved.draft.slice(0,1000):'';
    return saved.transcript.length>0;
   }finally{restoringChat=false;}
@@ -266,7 +266,7 @@
  }
  async function submit(text){text=text.trim();if(!text||pending||!authorized)return;const version=epoch;add(text,'user');input.value='';saveConversation();if($('chatMode').value!=='ai'){const reply=answer(text);add(reply.text,'bot',reply.href);return;}
   lock(true);controller=new AbortController();const timeout=setTimeout(()=>controller?.abort(),50000);const waiting=document.createElement('p');waiting.className='may-chat-wait';waiting.setAttribute('role','status');waiting.textContent='May đang xem dữ liệu và trả lời…';messages.append(waiting);messages.scrollTop=messages.scrollHeight;
-  try{const previous=history.slice(-8);while(previous.reduce((s,m)=>s+m.content.length,0)+text.length>9500)previous.shift();const payload=await api('POST',{messages:[...previous,{role:'user',content:text}]},controller.signal);if(version!==epoch||!authorized)return;if(typeof payload.reply!=='string'||!payload.reply.trim())throw new Error('AI chưa trả lời được. Hãy thử lại.');add(payload.reply);addSources(payload.sources);history=[...previous,{role:'user',content:text},{role:'assistant',content:payload.reply.slice(0,1500)}].slice(-8);saveConversation();$('chatConnection').textContent='Em Kem đã sẵn sàng rùi nè <3';}
+  try{const previous=history.slice(-8);while(previous.reduce((s,m)=>s+m.content.length,0)+text.length>9500)previous.shift();const payload=await api('POST',{messages:[...previous,{role:'user',content:text}]},controller.signal);if(version!==epoch||!authorized)return;if(typeof payload.reply!=='string'||!payload.reply.trim())throw new Error('AI chưa trả lời được. Hãy thử lại.');add(payload.reply);history=[...previous,{role:'user',content:text},{role:'assistant',content:payload.reply.slice(0,1500)}].slice(-8);saveConversation();$('chatConnection').textContent='Em Kem đã sẵn sàng rùi nè <3';}
   catch(error){if(version===epoch&&authorized)add(error.name==='AbortError'?'AI phản hồi chậm. Hãy thử lại hoặc chọn Tra cứu nhanh.':error.message||'Chưa kết nối được AI.');}
   finally{clearTimeout(timeout);waiting.remove();if(version===epoch){controller=null;lock(false);if(!panel.hidden)input.focus();}}
  }
