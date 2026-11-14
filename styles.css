@@ -443,3 +443,55 @@ html[data-kem-may-theme=liquid] .item-suggestion{color:#70475d}
 html[data-kem-may-theme=liquid] .item-suggestion[aria-selected=true],
 html[data-kem-may-theme=liquid] .item-suggestion:hover{background:#fbe5ef}
 @media(max-width:540px){.item-suggestion{min-height:44px;font-size:12px}.item-suggestion-count{font-size:10px}}
+
+
+/* Em Kem CSS motion v1: lightweight, composited transforms for iPhone Safari.
+   Existing pet-state images, drag, chat and speech bubble behavior stay intact. */
+@keyframes kem-idle-breathe{
+ 0%,100%{transform:translate3d(0,0,0) rotate(0deg) scale(1)}
+ 35%{transform:translate3d(0,-2px,0) rotate(-1.4deg) scale(1.018,.99)}
+ 70%{transform:translate3d(0,-1px,0) rotate(1.2deg) scale(.993,1.012)}
+}
+@keyframes kem-walk-step{
+ 0%,100%{transform:translate3d(0,0,0) rotate(-2deg)}
+ 50%{transform:translate3d(0,-4px,0) rotate(2deg)}
+}
+@keyframes kem-sleep-breathe{
+ 0%,100%{transform:translate3d(0,1px,0) rotate(-3deg) scale(1,.985)}
+ 50%{transform:translate3d(0,3px,0) rotate(-3deg) scale(1.018,.965)}
+}
+@keyframes kem-snack-nod{
+ 0%,100%{transform:translate3d(0,0,0) rotate(0)}
+ 30%,70%{transform:translate3d(0,2px,0) rotate(3deg)}
+ 50%{transform:translate3d(0,4px,0) rotate(-2deg)}
+}
+@keyframes kem-drink-nod{
+ 0%,100%{transform:translate3d(0,0,0) rotate(0)}
+ 45%{transform:translate3d(0,3px,0) rotate(3deg)}
+ 75%{transform:translate3d(0,1px,0) rotate(-1deg)}
+}
+.may-chat:not(.em-kem-dragging) .may-chat-launch[aria-expanded="false"] .em-kem-poodle{
+ animation:kem-idle-breathe 3.8s ease-in-out infinite;
+ transform-origin:50% 90%;
+ backface-visibility:hidden;
+ -webkit-backface-visibility:hidden;
+}
+.may-chat[data-pet-state="walk"]:not(.em-kem-dragging) .may-chat-launch[aria-expanded="false"] .em-kem-poodle{
+ animation:kem-walk-step .42s ease-in-out infinite;
+}
+.may-chat[data-pet-state="sleep"]:not(.em-kem-dragging) .may-chat-launch[aria-expanded="false"] .em-kem-poodle{
+ animation:kem-sleep-breathe 3.4s ease-in-out infinite;
+}
+.may-chat[data-pet-state="eat"]:not(.em-kem-dragging) .may-chat-launch[aria-expanded="false"] .em-kem-poodle{
+ animation:kem-snack-nod .75s ease-in-out infinite;
+}
+.may-chat[data-pet-state="drink"]:not(.em-kem-dragging) .may-chat-launch[aria-expanded="false"] .em-kem-poodle{
+ animation:kem-drink-nod 1.1s ease-in-out infinite;
+}
+.may-chat.em-kem-dragging .em-kem-poodle,
+.may-chat .may-chat-launch[aria-expanded="true"] .em-kem-poodle{
+ animation:none!important;
+}
+@media (prefers-reduced-motion:reduce){
+ .may-chat .may-chat-launch .em-kem-poodle{animation:none!important;transition:none!important}
+}
