@@ -62,6 +62,35 @@
   const top=r.top>=h+gap?r.top-h-gap:r.bottom+h+gap<=innerHeight?r.bottom+gap:clamp(r.top,gap,innerHeight-h-gap);
   panel.style.left=clamp(r.right-w,gap,innerWidth-w-gap)+'px';panel.style.top=top+'px';
  }
+ // On phones the on-screen keyboard shrinks the visual viewport. Re-clamping
+ // the mascot and panel to the shrunken height shoves the whole chat tab to
+ // the top of the screen. While the keyboard is open, dock the panel to the
+ // visible area instead and leave the mascot where it is.
+ let fullViewportHeight=window.visualViewport?window.visualViewport.height:innerHeight;
+ function keyboardOpen(){
+  const vv=window.visualViewport;if(!vv)return false;
+  const el=document.activeElement;
+  if(!(el&&el.matches&&el.matches('input,textarea,select,[contenteditable="true"]')))return false;
+  if(vv.height<innerHeight-50)return true;
+  if(vv.height<fullViewportHeight-100)return true;
+  return false;
+ }
+ function dockPanelToKeyboard(){
+  const vv=window.visualViewport;if(!vv||panel.hidden)return;
+  const gap=12,w=panel.getBoundingClientRect().width;
+  panel.style.maxHeight=Math.max(80,vv.height-gap*2)+'px';
+  panel.style.left=clamp(parseFloat(panel.style.left)||0,vv.offsetLeft+gap,vv.offsetLeft+vv.width-w-gap)+'px';
+  panel.style.top=(vv.offsetTop+gap)+'px';
+ }
+ function handleViewportChange(){
+  const vv=window.visualViewport;
+  if(vv)fullViewportHeight=Math.max(fullViewportHeight,vv.height);
+  if(keyboardOpen()){
+   if(!panel.hidden)dockPanelToKeyboard();
+   return;
+  }
+  placeMascot();
+ }
  function placeMascot(){
   if(host.hidden)return;
   const r=launcher.getBoundingClientRect(),gap=12;
@@ -95,7 +124,8 @@
   const moves={ArrowLeft:[-16,0],ArrowRight:[16,0],ArrowUp:[0,-16],ArrowDown:[0,16]};
   if(!moves[event.key])return;event.preventDefault();placeMascot();const [dx,dy]=moves[event.key];mascotPosition={x:mascotPosition.x+dx,y:mascotPosition.y+dy};placeMascot();saveMascot();
  });
- window.addEventListener('resize',placeMascot);window.visualViewport?.addEventListener('resize',placeMascot);
+ window.addEventListener('resize',handleViewportChange);window.visualViewport?.addEventListener('resize',handleViewportChange);
+ input.addEventListener('focus',handleViewportChange);input.addEventListener('blur',handleViewportChange);
 
  function open(value){stopPet();closeCare();if(!value)schedulePet();panel.hidden=!value;launcher.setAttribute('aria-expanded',String(value));if(value){placePanel();input.focus();}else launcher.focus();saveConversation();}
  window.mayChatSync=()=>{const next=authorized?activeUser?.id:null;if(identity!==next){identity=next;epoch++;controller?.abort();controller=null;lock(false);history=[];modeTouched=false;$('chatMode').value='quick';modeInfo();$('chatConnection').textContent='Đang kiểm tra kết nối AI…';messages.replaceChildren();input.value='';panel.hidden=true;launcher.setAttribute('aria-expanded','false');if(next){if(!restoreConversation())add('Chào May! 🫶🏻 '+help);checkAI(epoch);}}host.hidden=!authorized;placeMascot();};
