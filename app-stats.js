@@ -1,5 +1,10 @@
 // Pham vi thong ke chi anh huong den trang Tong quan, khong thay doi du lieu don hang.
 const STATS_RANGE_KEY = 'stats-range-v1';
+const COMMISSION_DATE_MODE_KEY='commission-by-received-date-v1';
+function commissionDateMode(){try{return localStorage.getItem(COMMISSION_DATE_MODE_KEY)==='true';}catch{return false;}}
+function saveCommissionDateMode(value){try{localStorage.setItem(COMMISSION_DATE_MODE_KEY,String(value));return true;}catch{return false;}}
+function commissionDateInRange(order,range){const key=order.commissionReceivedOn;return validDateKey(key)&&(!range.from||key>=range.from)&&(!range.to||key<=range.to);}
+
 
 function loadStatsRange() {
   const empty = { from: '', to: '' };
@@ -77,6 +82,7 @@ function initStatsRangeSettings() {
         <input id="statsTo" type="date" min="1970-01-01">
       </div>
     </div>
+    <label for="commissionDateMode" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)"><span style="display:grid;gap:5px;flex:1"><strong style="font-size:14px">Hoa hồng theo ngày nhận</strong><small class="hint" style="line-height:1.5">Tắt: tính như cũ theo ngày tạo đơn. Bật: tính theo ngày thực nhận hoa hồng.</small></span><input id="commissionDateMode" type="checkbox" role="switch" style="appearance:auto;width:24px;min-width:24px;height:24px;min-height:24px;accent-color:#dc8579;flex-shrink:0"></label>
     <div class="form-actions" style="margin-top:0;padding-top:12px">
       <button type="button" id="statsRangeSave">Lưu</button>
       <button type="button" class="secondary" id="statsRangeClear">Xem tất cả</button>
@@ -93,6 +99,7 @@ function initStatsRangeSettings() {
   toInput.value = savedRange.to;
   status.textContent = `Đang áp dụng: ${statsRangeLabel(savedRange)}.`;
 
+  const toggle=$('commissionDateMode');toggle.checked=commissionDateMode();toggle.addEventListener('change',()=>{if(!saveCommissionDateMode(toggle.checked)){toggle.checked=!toggle.checked;status.textContent='Không lưu được cài đặt.';return;}status.textContent=toggle.checked?'Đã bật tính hoa hồng theo ngày nhận. Bổ sung ngày cho các đơn cũ để được tính.':'Đã tắt, trở lại cách tính cũ.';});
   $('statsRangeSave').addEventListener('click', () => {
     const from = fromInput.value;
     const to = toInput.value;
@@ -172,8 +179,11 @@ function renderStats(list, total) {
   const unreceivedOrderValue = scoped
     .filter(order => order.commission === 0)
     .reduce((sum, order) => sum + BigInt(Math.round(order.price * 1000)), 0n);
-  const receivedCommission = sumCommissions(scoped);
-  const estimatedCommission = receivedCommission + (unreceivedOrderValue * 15n + 50n) / 100n;
+  const dateMode=commissionDateMode();
+  const commissionScope=dateMode?orders.filter(order=>commissionDateInRange(order,range)):scoped;
+  const receivedCommission=sumCommissions(commissionScope);
+  const estimatedCommission = sumCommissions(scoped) + (unreceivedOrderValue * 15n + 50n) / 100n;
+  const undatedReceived=dateMode?orders.filter(order=>order.commission>0&&!validDateKey(order.commissionReceivedOn)).length:0;
 
   const stats = [
     ['Tổng đơn hàng', scoped.length, filtered ? `Trong ${rangeText}` : 'Tất cả đơn đã lưu'],
@@ -182,7 +192,7 @@ function renderStats(list, total) {
     ['Chưa giao', undelivered, `${unknown} đơn chưa rõ trạng thái`],
     ['Đã hủy', cancelled, 'Đơn được giữ lại để đối chiếu'],
     ['Hoa hồng đã nhận', fmtCommission(receivedCommission),
-      'Tổng hoa hồng dự kiến: ' + fmtCommission(estimatedCommission)]
+      'Tổng hoa hồng dự kiến: ' + fmtCommission(estimatedCommission)+(dateMode?' · Theo ngày nhận'+(undatedReceived?` · ${undatedReceived} đơn chưa rõ ngày nhận`:''):'')]
   ];
 
   if ($('stats')) {
