@@ -91,31 +91,39 @@ function initStatsRangeSettings() {
   section.className = 'panel stats-range-settings';
   section.id = 'statsRangeSettings';
   section.setAttribute('aria-labelledby', 'statsRangeTitle');
-  // Chi sua app-stats.js: canh khung voi muc Giao dien ma khong sua CSS/HTML.
-  if(section.style)section.style.cssText = 'max-width:460px;margin:22px auto;padding:22px 26px;display:grid;gap:14px';
   section.innerHTML = `
-    <div>
-      <h2 id="statsRangeTitle" style="font-size:16px;margin:0 0 6px">Phạm vi thống kê</h2>
-      <p class="hint" style="margin:0;line-height:1.6">
-        Chỉ giới hạn số liệu ở trang Tổng quan. Mọi đơn hàng vẫn được lưu nguyên vẹn.
-      </p>
+    <div class="stats-range-intro">
+      <div class="stats-range-heading">
+        <svg class="icon" aria-hidden="true"><use href="icons.svg#calendar"></use></svg>
+        <h2 id="statsRangeTitle">Phạm vi thống kê</h2>
+      </div>
+      <p>Chọn khoảng thời gian hiển thị trên Tổng quan.</p>
     </div>
-    <div class="date-fields">
+    <div class="date-fields stats-date-fields">
       <div class="field">
         <label for="statsFrom">Từ ngày</label>
-        <input id="statsFrom" type="date" min="1970-01-01">
+        <div class="stats-date-control">
+          <span class="stats-date-display is-placeholder" id="statsFromDisplay" aria-hidden="true">dd/mm/yyyy</span>
+          <input id="statsFrom" type="date" min="1970-01-01" aria-label="Từ ngày">
+        </div>
       </div>
       <div class="field">
         <label for="statsTo">Đến ngày</label>
-        <input id="statsTo" type="date" min="1970-01-01">
+        <div class="stats-date-control">
+          <span class="stats-date-display is-placeholder" id="statsToDisplay" aria-hidden="true">dd/mm/yyyy</span>
+          <input id="statsTo" type="date" min="1970-01-01" aria-label="Đến ngày">
+        </div>
       </div>
     </div>
-    <label for="commissionDateMode" class="commission-date-row"><span style="display:grid;gap:5px;flex:1"><strong style="font-size:14px">Hoa hồng theo ngày nhận</strong></span><input id="commissionDateMode" type="checkbox" role="switch" class="stats-date-switch"></label>
-    <div class="form-actions" style="margin-top:0;padding-top:12px">
+    <label for="commissionDateMode" class="commission-date-row">
+      <span>Hoa hồng theo ngày nhận</span>
+      <input id="commissionDateMode" type="checkbox" role="switch" class="stats-date-switch">
+    </label>
+    <div class="form-actions stats-range-actions">
       <button type="button" id="statsRangeSave">Lưu</button>
       <button type="button" class="secondary" id="statsRangeClear">Xem tất cả</button>
     </div>
-    <p id="statsRangeStatus" class="hint" role="status" aria-live="polite" style="margin:0"></p>
+    <p id="statsRangeStatus" class="stats-range-status hint" role="status" aria-live="polite"></p>
   `;
   anchor.before(section);
 
@@ -125,9 +133,41 @@ function initStatsRangeSettings() {
   const savedRange = loadStatsRange();
   fromInput.value = savedRange.from;
   toInput.value = savedRange.to;
-  status.textContent = `Đang áp dụng: ${statsRangeLabel(savedRange)}.`;
+  const updateDateLabels = () => {
+    for (const [input, displayId] of [[fromInput, 'statsFromDisplay'], [toInput, 'statsToDisplay']]) {
+      const display = $(displayId);
+      if (!display) continue;
+      const valid = validDateKey(input.value);
+      display.textContent = valid ? displayDate(input.value) : 'dd/mm/yyyy';
+      display.classList.toggle('is-placeholder', !valid);
+    }
+  };
+  for (const input of [fromInput, toInput]) {
+    input.addEventListener('input', updateDateLabels);
+    input.addEventListener('change', updateDateLabels);
+    // Native date selection remains available behind the consistent dd/mm/yyyy label.
+    input.addEventListener('click', () => {
+      if (typeof input.showPicker === 'function') {
+        try { input.showPicker(); } catch { /* iOS already opened its native picker. */ }
+      }
+    });
+  }
+  updateDateLabels();
+  const showActiveRange = () => {
+    status.textContent = `Đang áp dụng: ${statsRangeLabel(loadStatsRange())}.`;
+  };
+  showActiveRange();
 
-  const toggle=$('commissionDateMode');toggle.checked=commissionDateMode();toggle.addEventListener('change',()=>{if(!saveCommissionDateMode(toggle.checked)){toggle.checked=!toggle.checked;status.textContent='Không lưu được cài đặt.';return;}status.textContent=toggle.checked?'Đã bật: sử dụng thời điểm sửa hoa hồng đã lưu trong lịch sử đơn hàng.':'Đã tắt, trở lại cách tính cũ.';});
+  const toggle=$('commissionDateMode');
+  toggle.checked=commissionDateMode();
+  toggle.addEventListener('change', () => {
+    if(!saveCommissionDateMode(toggle.checked)){
+      toggle.checked=!toggle.checked;
+      status.textContent='Không lưu được cài đặt.';
+      return;
+    }
+    showActiveRange();
+  });
   $('statsRangeSave').addEventListener('click', () => {
     const from = fromInput.value;
     const to = toInput.value;
@@ -144,7 +184,7 @@ function initStatsRangeSettings() {
       status.textContent = 'Không lưu được trên thiết bị này. Hãy kiểm tra quyền lưu trữ của trình duyệt.';
       return;
     }
-    status.textContent = `Đã lưu: ${statsRangeLabel({ from, to })}. Mở Tổng quan để xem số liệu.`;
+    status.textContent = `Đã lưu: ${statsRangeLabel({ from, to })}.`;
   });
 
   $('statsRangeClear').addEventListener('click', () => {
@@ -154,7 +194,8 @@ function initStatsRangeSettings() {
     }
     fromInput.value = '';
     toInput.value = '';
-    status.textContent = 'Đã chuyển về: Tất cả thời gian.';
+    updateDateLabels();
+    showActiveRange();
   });
 }
 
