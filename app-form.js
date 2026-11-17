@@ -7,9 +7,13 @@ function initEditor(){
  setText('createdDateHint','Ngày tạo đơn: '+displayDate(orderDateKey(order))+' · Giờ Việt Nam');setText('pageTitle','Chỉnh sửa đơn hàng');setText('formTitle','Đơn của '+order.name);setText('formMode','Đang sửa');setText('saveButton','Lưu thay đổi');setText('editNote','Lưu thay đổi để cập nhật đơn hàng dùng chung.');
  }
  $('saveButton').disabled=false;
+ if($('commissionReceivedField')){$('commissionReceivedField').hidden=false;$('fCommissionReceivedOn').value=orders.find(o=>o.id===editId)?.commissionReceivedOn||'';}
 }
 async function saveOrder(e){e.preventDefault();if(busy||!authorized||!editorReady||!dataLoaded||$('saveButton').disabled)return;const o={name:$('fName').value.trim(),item:$('fItem').value.trim(),price:Number($('fPrice').value),commission:commissionInputToVnd($('fCommission').value),pay:$('fPayIn').value,del:$('fDelIn').value,note:$('fNote').value.trim()};
  for(const id of ['fName','fItem']){const input=$(id);input.setCustomValidity(input.value.trim()?'':'Vui lòng nhập nội dung, không chỉ khoảng trắng.');if(!input.reportValidity())return;}
+ const previous=orders.find(x=>x.id===editId),dateInput=$('fCommissionReceivedOn');
+ if(dateInput){const chosen=dateInput.value;if(chosen&&!validDateKey(chosen)){notify('Ngày nhận hoa hồng không hợp lệ.');return;}
+ o.commissionReceivedOn=o.commission>0?(chosen||previous?.commissionReceivedOn||(previous?.commission>0?'':orderDateKey({createdAt:new Date().toISOString()}))):'';}
  const id=editId??crypto.randomUUID();if(!validOrder({id,version:editVersion??1,...o})||$('fPrice').value.trim()===''){notify('Vui lòng kiểm tra thông tin và số tiền hợp lệ.');return;}
  const isEditing=editId!==null;if(isEditing&&!orders.some(x=>x.id===editId)){notify('Đơn này không còn tồn tại. Vui lòng quay lại danh sách.');return;}
  const epoch=authEpoch;const version=editVersion;setBusy(true);let saved;
@@ -156,6 +160,7 @@ function initItemAutocomplete() {
 
 function initFormBindings(){
 initItemAutocomplete();
+if($('fCommission')&&$('commissionReceivedField'))$('fCommission').addEventListener('input',()=>{$('commissionReceivedField').hidden=commissionInputToVnd($('fCommission').value)===0;});
 if(page==='order'){$('cancelEdit').href=listReturn;$('backToOrders').href=listReturn;}
 bind('orderForm','submit',saveOrder);for(const id of ['fName','fItem'])bind(id,'input',()=>$(id).setCustomValidity(''));
 bind('orderForm','input',()=>editorDirty=true);bind('orderForm','change',()=>editorDirty=true);
