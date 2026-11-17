@@ -61,7 +61,7 @@ function findItemSuggestions(query, sourceOrders, maxResults = 5) {
 function initItemAutocomplete() {
  const input = $('fItem');
  if (!input || input.dataset.itemSuggestReady === 'true') return;
- const field = input.closest('.field');
+ const field = typeof input.closest === 'function' ? input.closest('.field') : null;
  if (!field) return;
  input.dataset.itemSuggestReady = 'true';
  input.autocomplete = 'off';
