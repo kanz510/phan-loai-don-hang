@@ -15,6 +15,7 @@
    event.preventDefault();opener=link;
    form.reset();editId=null;editVersion=null;editorDirty=false;editorReady=true;
    $('dialogNotice').hidden=true;$('saveButton').disabled=false;
+   if($('fCommissionReceivedOn'))$('fCommissionReceivedOn').value='';if($('commissionReceivedField'))$('commissionReceivedField').hidden=true;
    sheet.showModal();document.body.classList.add('order-sheet-open');
   });
  }
