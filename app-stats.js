@@ -110,7 +110,7 @@ function initStatsRangeSettings() {
         <input id="statsTo" type="date" min="1970-01-01">
       </div>
     </div>
-    <label for="commissionDateMode" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)"><span style="display:grid;gap:5px;flex:1"><strong style="font-size:14px">Hoa hồng theo ngày nhận</strong></span><input id="commissionDateMode" type="checkbox" role="switch" class="stats-date-switch"></label>
+    <label for="commissionDateMode" class="commission-date-row"><span style="display:grid;gap:5px;flex:1"><strong style="font-size:14px">Hoa hồng theo ngày nhận</strong></span><input id="commissionDateMode" type="checkbox" role="switch" class="stats-date-switch"></label>
     <div class="form-actions" style="margin-top:0;padding-top:12px">
       <button type="button" id="statsRangeSave">Lưu</button>
       <button type="button" class="secondary" id="statsRangeClear">Xem tất cả</button>
