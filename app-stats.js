@@ -110,7 +110,7 @@ function initStatsRangeSettings() {
         <input id="statsTo" type="date" min="1970-01-01">
       </div>
     </div>
-    <label for="commissionDateMode" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)"><span style="display:grid;gap:5px;flex:1"><strong style="font-size:14px">Hoa hồng theo ngày nhận</strong><small class="hint" style="line-height:1.5">Tắt: tính như cũ theo ngày tạo đơn. Bật: lấy ngày sửa hoa hồng từ Lịch sử đơn hàng.</small></span><input id="commissionDateMode" type="checkbox" role="switch" style="appearance:auto;width:24px;min-width:24px;height:24px;min-height:24px;accent-color:#dc8579;flex-shrink:0"></label>
+    <label for="commissionDateMode" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)"><span style="display:grid;gap:5px;flex:1"><strong style="font-size:14px">Hoa hồng theo ngày nhận</strong><small class="hint" style="line-height:1.5">Tắt: tính như cũ theo ngày tạo đơn. Bật: lấy ngày sửa hoa hồng từ Lịch sử đơn hàng.</small></span><input id="commissionDateMode" type="checkbox" role="switch" class="stats-date-switch"></label>
     <div class="form-actions" style="margin-top:0;padding-top:12px">
       <button type="button" id="statsRangeSave">Lưu</button>
       <button type="button" class="secondary" id="statsRangeClear">Xem tất cả</button>
@@ -219,7 +219,7 @@ function renderStats(list, total) {
     ['Chưa giao', undelivered, `${unknown} đơn chưa rõ trạng thái`],
     ['Đã hủy', cancelled, 'Đơn được giữ lại để đối chiếu'],
     ['Hoa hồng đã nhận', dateMode&&!commissionAuditReady?'—':fmtCommission(receivedCommission),
-      dateMode&&!commissionAuditReady?'Không tải được lịch sử hoa hồng. Bấm Cập nhật.':
+      dateMode&&!commissionAuditReady?'Không tải được lịch sử hoa hồng. Hãy tải lại trang.':
       'Tổng hoa hồng dự kiến: '+fmtCommission(estimatedCommission)+
       (dateMode?' · Theo lịch sử sửa'+(audit?.missing&&filtered?` · ${audit.missing} đơn cũ thiếu lịch sử`:''):'')]
   ];
