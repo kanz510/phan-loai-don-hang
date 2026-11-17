@@ -640,3 +640,22 @@ html[data-kem-may-theme=liquid] .item-suggestion:hover{background:#fbe5ef}
 @media (prefers-reduced-motion:reduce){
  .may-chat .may-chat-launch .em-kem-poodle{animation:none!important;background-position:0 0!important}
 }
+
+
+/* Phạm vi thống kê: công tắc Hoa hồng theo ngày nhận (iOS Safari/PWA). */
+.stats-range-settings input.stats-date-switch{
+  -webkit-appearance:none;appearance:none;position:relative;flex:0 0 auto;
+  display:block;width:48px;min-width:48px;height:28px;min-height:28px;
+  margin:0;padding:0;border:1px solid #d6b6aa;border-radius:999px;
+  background:#e9d8d2;box-shadow:inset 0 1px 3px #7a4b4520;
+  cursor:pointer;transition:background .2s,border-color .2s;
+}
+.stats-range-settings input.stats-date-switch::before{
+  content:"";position:absolute;left:2px;top:2px;width:22px;height:22px;
+  border-radius:50%;background:#fff;box-shadow:0 1px 4px #714c4b45;
+  transition:transform .2s;
+}
+.stats-range-settings input.stats-date-switch:checked{background:#e98a83;border-color:#d47872}
+.stats-range-settings input.stats-date-switch:checked::before{transform:translateX(20px)}
+.stats-range-settings input.stats-date-switch:focus-visible{outline:3px solid #315f4d;outline-offset:3px}
+@media(prefers-reduced-motion:reduce){.stats-range-settings input.stats-date-switch,.stats-range-settings input.stats-date-switch::before{transition:none}}
