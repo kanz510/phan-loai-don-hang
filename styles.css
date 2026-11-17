@@ -659,3 +659,40 @@ html[data-kem-may-theme=liquid] .item-suggestion:hover{background:#fbe5ef}
 .stats-range-settings input.stats-date-switch:checked::before{transform:translateX(20px)}
 .stats-range-settings input.stats-date-switch:focus-visible{outline:3px solid #315f4d;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){.stats-range-settings input.stats-date-switch,.stats-range-settings input.stats-date-switch::before{transition:none}}
+
+
+/* Account statistics: keep native date inputs inside their grid tracks on iPhone. */
+.stats-range-settings .date-fields{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  width:100%;
+  min-width:0;
+}
+.stats-range-settings .date-fields>.field{min-width:0;max-width:100%}
+.stats-range-settings .date-fields input[type="date"]{
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  min-height:46px;
+  font-size:16px;
+  padding:10px 12px;
+}
+/* The long Vietnamese iOS native date format needs a full row on small phones. */
+@media(max-width:540px){
+  .stats-range-settings .date-fields{grid-template-columns:minmax(0,1fr);gap:14px}
+}
+/* Center the label and the switch between the section's two divider lines. */
+.stats-range-settings .commission-date-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:0;
+  padding:16px 0 0;
+  min-height:44px;
+  border-top:1px solid var(--line);
+}
+.stats-range-settings .commission-date-row>span{flex:1;min-width:0}
