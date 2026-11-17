@@ -85,7 +85,7 @@ function statsRangeLabel(range) {
 function initStatsRangeSettings() {
   if (document.body.dataset.page !== 'account' || $('statsRangeSettings')) return;
   const anchor = document.querySelector('.account-theme-settings');
-  if (!anchor) return;
+  if (!anchor || typeof anchor.before !== 'function') return;
 
   const section = document.createElement('section');
   section.className = 'panel stats-range-settings';
