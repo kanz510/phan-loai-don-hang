@@ -44,7 +44,7 @@
   finally{form.reset();passwordSaving=false;setBusy(false);$('changePasswordButton').disabled=false;passwordInputs.forEach(id=>$(id).disabled=false);}
  });
  window.addEventListener('beforeunload',event=>{if(passwordSaving||passwordInputs.some(id=>$(id).value)){event.preventDefault();event.returnValue='';}});
- const fields={customer_name:'Tên khách',item:'Hàng mua',amount_k:'Số tiền',commission_amount:'Hoa hồng đã nhận',commission_received_on:'Ngày nhận hoa hồng',payment_method:'Thanh toán',delivery_status:'Trạng thái',note:'Ghi chú'};
+ const fields={customer_name:'Tên khách',item:'Hàng mua',amount_k:'Số tiền',commission_amount:'Hoa hồng đã nhận',payment_method:'Thanh toán',delivery_status:'Trạng thái',note:'Ghi chú'};
  function valueText(key,value){
   if(value===undefined||value===null||value==='')return '—';
   if(key==='amount_k')return fmt(Number(value));

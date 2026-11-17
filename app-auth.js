@@ -4,13 +4,25 @@ function errorText(error){if(error?.status===401||error?.code==='PGRST301')retur
 function setBusy(value){busy=value;document.body.dataset.busy=String(value);for(const id of ['saveButton','logoutButton'])if($(id))$(id).disabled=value;for(const button of document.querySelectorAll('.deliver-order'))button.disabled=value;for(const field of $('orderForm')?.querySelectorAll('input,select')||[])field.disabled=value;}
 async function refreshOrders({silent=false}={}){
  if(!authorized)return;const epoch=authEpoch,seq=++refreshSeq;
- try{const list=await cloud.list();if(epoch!==authEpoch||seq!==refreshSeq||!authorized)return;orders=parseOrders(JSON.stringify(list));dataLoaded=true;render();warning('');if($('syncStatus'))$('syncStatus').textContent='Đã đồng bộ · '+new Date().toLocaleTimeString('vi-VN');}
+ try{
+  const list=await cloud.list();
+  if(epoch!==authEpoch||seq!==refreshSeq||!authorized)return;
+  let auditRows=[],auditError='';
+  if(page==='index'&&commissionDateMode()){
+    try{auditRows=await cloud.commissionHistory();}catch(error){auditError=errorText(error);}
+  }
+  if(epoch!==authEpoch||seq!==refreshSeq||!authorized)return;
+  orders=parseOrders(JSON.stringify(list));dataLoaded=true;
+  commissionAuditRows=auditRows;commissionAuditReady=!auditError;commissionAuditError=auditError;
+  render();warning('');
+  if($('syncStatus'))$('syncStatus').textContent='Đã đồng bộ · '+new Date().toLocaleTimeString('vi-VN');
+ }
  catch(error){if(epoch!==authEpoch||seq!==refreshSeq)return;warning('Chưa tải được danh sách mới. '+errorText(error));if($('syncStatus'))$('syncStatus').textContent='Kết nối gián đoạn · danh sách có thể chưa cập nhật';if(!silent)notify(errorText(error));}
 }
 function stopSync(){clearInterval(pollTimer);pollTimer=null;if(channel){cloud.client.removeChannel(channel);channel=null;}}
 async function applySession(session){
  const user=session?.user||null;if(!user&&!activeUser&&authEpoch>0)return;if(user&&authorized&&activeUser?.id===user.id)return;
- const epoch=++authEpoch;window.accountToolsReset?.();stopSync();authorized=false;activeUser=user;orders=[];dataLoaded=false;editorReady=false;editId=null;editVersion=null;if($('rows'))$('rows').replaceChildren();render();
+ const epoch=++authEpoch;window.accountToolsReset?.();stopSync();authorized=false;activeUser=user;orders=[];commissionAuditRows=[];commissionAuditReady=false;commissionAuditError='';dataLoaded=false;editorReady=false;editId=null;editVersion=null;if($('rows'))$('rows').replaceChildren();render();
  if($('sharedApp'))$('sharedApp').hidden=true;if($('accessPanel'))$('accessPanel').hidden=false;
  if($('logoutButton'))$('logoutButton').hidden=!user;setText('accountEmail',user?.email||'');
  if(!user){if(page!=='account'){location.replace(loginRoute());return;}setText('authStatus',window.cloudStartupError||'Nhập tài khoản do chủ cửa hàng cấp.');$('authPanel').hidden=false;$('accountDetails').hidden=true;return;}

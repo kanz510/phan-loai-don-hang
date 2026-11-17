@@ -3,7 +3,35 @@ const STATS_RANGE_KEY = 'stats-range-v1';
 const COMMISSION_DATE_MODE_KEY='commission-by-received-date-v1';
 function commissionDateMode(){try{return localStorage.getItem(COMMISSION_DATE_MODE_KEY)==='true';}catch{return false;}}
 function saveCommissionDateMode(value){try{localStorage.setItem(COMMISSION_DATE_MODE_KEY,String(value));return true;}catch{return false;}}
-function commissionDateInRange(order,range){const key=order.commissionReceivedOn;return validDateKey(key)&&(!range.from||key>=range.from)&&(!range.to||key<=range.to);}
+function latestCommissionEvents(rows) {
+  const latest=new Map();
+  for(const entry of rows){
+    if(!entry||!['INSERT','UPDATE'].includes(entry.action))continue;
+    const before=Number(entry.before_data?.commission_amount??0);
+    const after=Number(entry.after_data?.commission_amount??0);
+    if(!Number.isSafeInteger(before)||!Number.isSafeInteger(after)||before===after)continue;
+    const timestamp=Date.parse(entry.recorded_at||'');
+    if(!Number.isFinite(timestamp))continue;
+    const key=String(entry.order_id),previous=latest.get(key),sequence=Number(entry.id)||0;
+    if(!previous||timestamp>previous.timestamp||(timestamp===previous.timestamp&&sequence>previous.sequence))
+      latest.set(key,{timestamp,sequence,amount:after});
+  }
+  return latest;
+}
+function commissionByHistory(allOrders,history,range) {
+  const events=latestCommissionEvents(history),hasRange=Boolean(range.from||range.to);
+  let total=0n,missing=0;
+  for(const order of allOrders){
+    if(order.commission<=0)continue;
+    const event=events.get(String(order.id));
+    if(!event||event.amount!==order.commission){missing++;continue;}
+    const key=orderDateKey({createdAt:new Date(event.timestamp).toISOString()});
+    if(!hasRange||((!range.from||key>=range.from)&&(!range.to||key<=range.to)))
+      total+=BigInt(order.commission);
+  }
+  if(!hasRange)return {total:sumCommissions(allOrders),missing};
+  return {total,missing};
+}
 
 
 function loadStatsRange() {
@@ -64,7 +92,7 @@ function initStatsRangeSettings() {
   section.id = 'statsRangeSettings';
   section.setAttribute('aria-labelledby', 'statsRangeTitle');
   // Chi sua app-stats.js: canh khung voi muc Giao dien ma khong sua CSS/HTML.
-  section.style.cssText = 'max-width:460px;margin:22px auto;padding:22px 26px;display:grid;gap:14px';
+  if(section.style)section.style.cssText = 'max-width:460px;margin:22px auto;padding:22px 26px;display:grid;gap:14px';
   section.innerHTML = `
     <div>
       <h2 id="statsRangeTitle" style="font-size:16px;margin:0 0 6px">Phạm vi thống kê</h2>
@@ -82,7 +110,7 @@ function initStatsRangeSettings() {
         <input id="statsTo" type="date" min="1970-01-01">
       </div>
     </div>
-    <label for="commissionDateMode" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)"><span style="display:grid;gap:5px;flex:1"><strong style="font-size:14px">Hoa hồng theo ngày nhận</strong><small class="hint" style="line-height:1.5">Tắt: tính như cũ theo ngày tạo đơn. Bật: tính theo ngày thực nhận hoa hồng.</small></span><input id="commissionDateMode" type="checkbox" role="switch" style="appearance:auto;width:24px;min-width:24px;height:24px;min-height:24px;accent-color:#dc8579;flex-shrink:0"></label>
+    <label for="commissionDateMode" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)"><span style="display:grid;gap:5px;flex:1"><strong style="font-size:14px">Hoa hồng theo ngày nhận</strong><small class="hint" style="line-height:1.5">Tắt: tính như cũ theo ngày tạo đơn. Bật: lấy ngày sửa hoa hồng từ Lịch sử đơn hàng.</small></span><input id="commissionDateMode" type="checkbox" role="switch" style="appearance:auto;width:24px;min-width:24px;height:24px;min-height:24px;accent-color:#dc8579;flex-shrink:0"></label>
     <div class="form-actions" style="margin-top:0;padding-top:12px">
       <button type="button" id="statsRangeSave">Lưu</button>
       <button type="button" class="secondary" id="statsRangeClear">Xem tất cả</button>
@@ -99,7 +127,7 @@ function initStatsRangeSettings() {
   toInput.value = savedRange.to;
   status.textContent = `Đang áp dụng: ${statsRangeLabel(savedRange)}.`;
 
-  const toggle=$('commissionDateMode');toggle.checked=commissionDateMode();toggle.addEventListener('change',()=>{if(!saveCommissionDateMode(toggle.checked)){toggle.checked=!toggle.checked;status.textContent='Không lưu được cài đặt.';return;}status.textContent=toggle.checked?'Đã bật tính hoa hồng theo ngày nhận. Bổ sung ngày cho các đơn cũ để được tính.':'Đã tắt, trở lại cách tính cũ.';});
+  const toggle=$('commissionDateMode');toggle.checked=commissionDateMode();toggle.addEventListener('change',()=>{if(!saveCommissionDateMode(toggle.checked)){toggle.checked=!toggle.checked;status.textContent='Không lưu được cài đặt.';return;}status.textContent=toggle.checked?'Đã bật: sử dụng thời điểm sửa hoa hồng đã lưu trong lịch sử đơn hàng.':'Đã tắt, trở lại cách tính cũ.';});
   $('statsRangeSave').addEventListener('click', () => {
     const from = fromInput.value;
     const to = toInput.value;
@@ -180,10 +208,9 @@ function renderStats(list, total) {
     .filter(order => order.commission === 0)
     .reduce((sum, order) => sum + BigInt(Math.round(order.price * 1000)), 0n);
   const dateMode=commissionDateMode();
-  const commissionScope=dateMode?orders.filter(order=>commissionDateInRange(order,range)):scoped;
-  const receivedCommission=sumCommissions(commissionScope);
+  const audit=dateMode&&commissionAuditReady?commissionByHistory(orders,commissionAuditRows,range):null;
+  const receivedCommission=dateMode?(audit?.total??0n):sumCommissions(scoped);
   const estimatedCommission = sumCommissions(scoped) + (unreceivedOrderValue * 15n + 50n) / 100n;
-  const undatedReceived=dateMode?orders.filter(order=>order.commission>0&&!validDateKey(order.commissionReceivedOn)).length:0;
 
   const stats = [
     ['Tổng đơn hàng', scoped.length, filtered ? `Trong ${rangeText}` : 'Tất cả đơn đã lưu'],
@@ -191,8 +218,10 @@ function renderStats(list, total) {
     ['Đã giao', delivered, 'Đơn hoàn thành giao hàng'],
     ['Chưa giao', undelivered, `${unknown} đơn chưa rõ trạng thái`],
     ['Đã hủy', cancelled, 'Đơn được giữ lại để đối chiếu'],
-    ['Hoa hồng đã nhận', fmtCommission(receivedCommission),
-      'Tổng hoa hồng dự kiến: ' + fmtCommission(estimatedCommission)+(dateMode?' · Theo ngày nhận'+(undatedReceived?` · ${undatedReceived} đơn chưa rõ ngày nhận`:''):'')]
+    ['Hoa hồng đã nhận', dateMode&&!commissionAuditReady?'—':fmtCommission(receivedCommission),
+      dateMode&&!commissionAuditReady?'Không tải được lịch sử hoa hồng. Bấm Cập nhật.':
+      'Tổng hoa hồng dự kiến: '+fmtCommission(estimatedCommission)+
+      (dateMode?' · Theo lịch sử sửa'+(audit?.missing&&filtered?` · ${audit.missing} đơn cũ thiếu lịch sử`:''):'')]
   ];
 
   if ($('stats')) {

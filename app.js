@@ -11,6 +11,7 @@ function loginRoute(){return 'account.html?next='+encodeURIComponent((location.p
 let orders=[],editId=null,editVersion=null,toastTimer,currentPage=1,activeUser=null,authorized=false,busy=false,authEpoch=0,refreshSeq=0,channel=null,pollTimer=null;
 const PAGE_SIZE=10;
 let dataLoaded=false,editorReady=false,unreceivedCommissionOnly=false;
+let commissionAuditRows=[],commissionAuditReady=false,commissionAuditError='';
 
 let editorDirty=false;
 function render(){
