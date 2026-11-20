@@ -149,9 +149,10 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
   // Dior lipsticks: count units from item text, never mistake shade codes or prices for quantities.
   // Query through the existing authenticated RLS snapshot. Ambiguous records stay uncounted.
   const productQuestion=normalize(history.at(-1).content).replace(/[?!.،,]/g,' ').replace(/\s+/g,' ').trim();
-  const productMatch=productQuestion.match(/^(?:kem oi\s+)?(?:da ban|ban duoc|da ban duoc)\s+(?:bao nhieu|may)\s+(.+?)(?:\s+roi)?(?:\s+kem)?$/)
-   ||productQuestion.match(/^(?:kem oi\s+)?(?:bao nhieu|may)\s+(.+?)\s+(?:da ban|ban duoc|da ban duoc)(?:\s+roi)?(?:\s+kem)?$/);
-  if(productMatch&&/^(?:thoi |cay |son )?dior(?:\s+roi)?$|^son dior$/.test(productMatch[1].trim())){
+  // Recognize conversational quantity questions about Dior without invoking an unreliable model.
+  const diorMention=/\b(?:son|thoi|cay)\s+dior\b|\bdior\s+(?:son|lipstick)\b/.test(productQuestion);
+  const quantityIntent=/(?:bao nhieu|may|dem|so luong|tong|thong ke|da ban|ban duoc|ban roi|ban bao nhieu|co bao nhieu|tat ca|tinh so)/.test(productQuestion);
+  if(diorMention&&quantityIntent){
    const rows=await readOrders();
    const matched=rows.filter(r=>/\bson\s+dior\b/i.test(normalize(r.item)));
    let units=0,orders=0,unshipped=0,uncertain=0;
