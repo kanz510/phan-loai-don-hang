@@ -217,6 +217,43 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
    const reply='May ơi, có '+units+' thỏi son Dior trong '+orders+' đơn chưa hủy ('+(units-unshipped)+' thỏi thuộc đơn đã giao, '+unshipped+' thỏi thuộc đơn chưa giao).'+(uncertain?' Có '+uncertain+' đơn chưa đọc chắc số lượng nên chưa cộng vào kết quả; cần kiểm tra lại.':'')+' Đây là số lượng suy ra từ tên sản phẩm và ghi chú, không phải số đơn.';
    return send({reply,sources:[{product:'Son Dior',count:orders,units,uncertain_orders:uncertain}],as_of:now().toISOString(),...(uncertain?{incomplete_details:true}:{})});
   }
+
+  // Count arbitrary product mentions locally; never require Render function calling.
+  const genericCount=productQuestion.match(/^(?:may oi\s+|kem oi\s+)?(?:da ban\s+)?(?:bao nhieu|may|dem|so luong|tong so)\s+(.+?)(?:\s+(?:da ban|ban duoc|roi|vay|the))?$/)
+    ||productQuestion.match(/^(.+?)\s+(?:da ban\s+)?(?:bao nhieu|may|co bao nhieu)(?:\s+(?:roi|vay|the))?$/);
+  if(genericCount&&quantityIntent&&!diorMention&&!/\b(?:tui|don|khach|hoa hong|doanh thu|tien|ngay|thang|nam)\b/.test(genericCount[1])){
+   const target=genericCount[1].replace(/^(?:san pham|mat hang)\s+/,'').replace(/\s+(?:da ban|ban duoc)$/,'').trim();
+   if(target.length>=3&&target.split(/\s+/).length<=6){
+    const rows=await readOrders();
+    let units=0,orders=0,uncertain=0,delivered=0,pending=0;
+    for(const row of rows){
+     if(row.delivery_status==='Đã hủy')continue;
+     const item=normalize(row.item||'').replace(/\s+/g,' ').trim();
+     const pieces=item.split(/[,;+]|\s+-\s+/);
+     let qty=0,matched=false,ambiguous=false;
+     for(const piece of pieces){
+      const position=piece.indexOf(target);
+      if(position<0)continue;
+      const left=piece.slice(0,position),right=piece.slice(position+target.length);
+      if((left&&/[a-z0-9]$/.test(left))||(right&&/^[a-z0-9]/.test(right)))continue;
+      matched=true;
+      const prefix=left.match(/(?:^|\s)(\d{1,2})\s*(?:cay|thoi|chai|hop|cai|bo|sp)?\s*$/);
+      const suffix=right.match(/^\s*(?:x|sl|so luong|:)\s*(\d{1,2})\b/);
+      const a=prefix?Number(prefix[1]):null,b=suffix?Number(suffix[1]):null;
+      if(a!==null&&b!==null&&a!==b){ambiguous=true;break;}
+      const n=a??b??1;
+      if(n<1||n>50){ambiguous=true;break;}
+      qty+=n;
+     }
+     if(!matched)continue;
+     if(ambiguous){uncertain++;continue;}
+     units+=qty;orders++;
+     if(row.delivery_status==='Đã giao')delivered+=qty;else pending+=qty;
+    }
+    const reply='May ơi, Kem tìm được '+units+' sản phẩm "'+target+'" trong '+orders+' đơn chưa hủy ('+delivered+' thuộc đơn đã giao, '+pending+' thuộc đơn chưa giao).'+(uncertain?' Có '+uncertain+' đơn có số lượng mâu thuẫn nên Kem chưa cộng.':'')+' Nếu tên hàng không ghi số lượng, Kem tạm tính 1 cho mỗi lần xuất hiện; kết quả là ước tính từ tên sản phẩm.';
+    return send({reply,sources:[{product:target,units,orders,uncertain_orders:uncertain,method:'product_text_estimate'}],as_of:now().toISOString(),mode:'direct',estimated_units:true,...(uncertain?{incomplete_details:true}:{})});
+   }
+  }
   const direct=quickOrderFilters(history.at(-1).content,now());
   if(direct){
    const result=queryOrders(await readOrders(),direct.filters),vnd=value=>new Intl.NumberFormat('vi-VN').format(BigInt(value))+'đ';
