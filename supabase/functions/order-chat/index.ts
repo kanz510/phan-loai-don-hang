@@ -146,18 +146,52 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
   const quota=await call(base+'/rest/v1/rpc/consume_order_chat_quota',{method:'POST',headers:{...dbHeaders,'Content-Type':'application/json'},body:'{}'});if(!quota.ok)throw new HttpError(503,'Chưa bật giới hạn sử dụng AI. Chủ cửa hàng cần chạy supabase-ai-chat.sql.');if(await quota.json()!==true)throw new HttpError(429,'Bạn vừa hỏi quá nhanh hoặc đã hết lượt AI hôm nay. Đợi vài giây rồi thử lại; Tra cứu nhanh vẫn dùng được.');
   let dataPromise;const readOrders=()=>dataPromise??=(async()=>{const rows=[];for(let start=0;start<=10000;start+=500){const query=new URLSearchParams({select:'id,customer_name,item,amount_k,commission_amount,payment_method,delivery_status,note,created_at',order:'created_at.desc,id.desc',offset:String(start),limit:'500'});const result=await call(base+'/rest/v1/orders?'+query,{headers:dbHeaders});if(!result.ok)throw new HttpError(503,'Chưa tải được dữ liệu đơn mới. Hãy kiểm tra kết nối và cột hoa hồng.');const batch=await result.json();if(!Array.isArray(batch))throw new HttpError(503,'Dữ liệu đơn không hợp lệ.');rows.push(...batch);if(rows.length>10000)throw new HttpError(422,'Danh sách vượt 10.000 đơn. Cần nâng cấp truy vấn máy chủ trước khi AI có thể thống kê đầy đủ.');if(batch.length<500)return rows;}throw new HttpError(422,'Không thể xác nhận dữ liệu đầy đủ.');})();
 
-  // Exact product-sales count questions use the authorized RLS snapshot directly.
-  // This counts matching order records, not item quantities (which are not tracked here).
+  // Dior lipsticks: count units from item text, never mistake shade codes or prices for quantities.
+  // Query through the existing authenticated RLS snapshot. Ambiguous records stay uncounted.
   const productQuestion=normalize(history.at(-1).content).replace(/[?!.،,]/g,' ').replace(/\s+/g,' ').trim();
   const productMatch=productQuestion.match(/^(?:kem oi\s+)?(?:da ban|ban duoc|da ban duoc)\s+(?:bao nhieu|may)\s+(.+?)(?:\s+roi)?(?:\s+kem)?$/)
    ||productQuestion.match(/^(?:kem oi\s+)?(?:bao nhieu|may)\s+(.+?)\s+(?:da ban|ban duoc|da ban duoc)(?:\s+roi)?(?:\s+kem)?$/);
-  if(productMatch){
-   const product=productMatch[1].trim();
-   if(product.length>=2&&product.length<=100){
-    const filters={from:null,to:null,customer:null,product,delivery:null,payment:null,group_by:'none',include_details:false,include_notes:false};
-    const result=queryOrders(await readOrders(),filters);
-    return send({reply:'May ơi, có '+result.count+' đơn hàng chứa sản phẩm "'+product+'" trong toàn bộ dữ liệu. Đây là số đơn khớp tên sản phẩm, không phải tổng số cây/thỏi vì dữ liệu này chưa có trường số lượng riêng.',sources:[{product,count:result.count}],as_of:now().toISOString()});
+  if(productMatch&&/^(?:thoi |cay |son )?dior(?:\s+roi)?$|^son dior$/.test(productMatch[1].trim())){
+   const rows=await readOrders();
+   const matched=rows.filter(r=>/\bson\s+dior\b/i.test(normalize(r.item)));
+   let units=0,orders=0,unshipped=0,uncertain=0;
+   const uncertainIds=[];
+   for(const row of matched){
+    if(row.delivery_status==='Đã hủy')continue;
+    const item=normalize(row.item).replace(/\s+/g,' ').trim();
+    const note=normalize(row.note||'');
+    let qty=null;
+    // Explicit count before the product, e.g. "3 son Dior maxi màu 12 - 18 - 38".
+    const prefix=item.match(/(?:^|[,+;]\s*|\s+-\s+)(\d{1,2})\s*(?:thoi\s+|cay\s+)?son\s+dior\b/);
+    if(prefix)qty=Number(prefix[1]);
+    // Explicit note quantities, if unambiguously tied to Dior.
+    const noteQty=note.match(/\b(?:sl|so luong|dior)\s*[:=]?\s*(\d{1,2})\s*(?:thoi|cay|son)?\b|\b(\d{1,2})\s*(?:thoi|cay)\s+(?:son\s+)?dior\b/);
+    if(noteQty)qty=Number(noteQty[1]||noteQty[2]);
+    if(qty===null){
+     // Count individually named Dior shades, including "Son Dior 009 + 029"
+     // and "Son Dior 012 unbox, Son Dior 038 unbox".
+     const occurrences=[...item.matchAll(/\bson\s+dior\b/g)];
+     let count=0;
+     for(let k=0;k<occurrences.length;k++){
+      const from=occurrences[k].index+occurrences[k][0].length;
+      const to=k+1<occurrences.length?occurrences[k+1].index:item.length;
+      let segment=item.slice(from,to);
+      // Cut at a clearly different product to avoid counting unrelated codes.
+      segment=segment.split(/\s*[-+,]\s*(?=(?:cushion|tui|serum|tay trang|nuoc hoa|son phytotree|mask)\b)/)[0];
+      const shade=segment.match(/(?:^|\b(?:mau|tone)\s*)(\d{2,3})\b/);
+      if(!shade){count++;continue;}
+      const rest=segment.slice(shade.index+shade[0].length);
+      const extras=[...rest.matchAll(/\s*(?:\+|,|\s-\s)\s*(\d{2,3})\b/g)];
+      count+=1+extras.length;
+     }
+     qty=count||null;
+    }
+    if(!Number.isInteger(qty)||qty<1||qty>50){uncertain++;uncertainIds.push(row.id);continue;}
+    units+=qty;orders++;
+    if(row.delivery_status!=='Đã giao')unshipped+=qty;
    }
+   const reply='May ơi, có '+units+' thỏi son Dior trong '+orders+' đơn chưa hủy ('+(units-unshipped)+' thỏi thuộc đơn đã giao, '+unshipped+' thỏi thuộc đơn chưa giao).'+(uncertain?' Có '+uncertain+' đơn chưa đọc chắc số lượng nên chưa cộng vào kết quả; cần kiểm tra lại.':'')+' Đây là số lượng suy ra từ tên sản phẩm và ghi chú, không phải số đơn.';
+   return send({reply,sources:[{product:'Son Dior',count:orders,units,uncertain_orders:uncertain}],as_of:now().toISOString(),...(uncertain?{incomplete_details:true}:{})});
   }
   const direct=quickOrderFilters(history.at(-1).content,now());
   if(direct){
