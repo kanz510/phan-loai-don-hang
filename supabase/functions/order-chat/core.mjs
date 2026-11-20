@@ -212,7 +212,8 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
    const runProvider=async(name)=>{
     const modelName=name==='groq'?(env('GROQ_MODEL')||'openai/gpt-oss-120b'):name==='xkiro_command'?'mistralai/mistral-large-2512':'mistralai/mistral-medium-3.5';
     const providerTool=name==='groq'?{...tool,function:{...tool.function,parameters:{...schema,properties:{...schema.properties,delivery:{type:['array','null'],items:{type:'string',enum:DELIVERY}},payment:{type:['array','null'],items:{type:'string',enum:PAYMENT}},include_details:{type:'boolean'},include_notes:{type:'boolean'}}}}}:tool;
-    const payload={model:modelName,messages,tools:[providerTool],tool_choice:!orderIntent?'none':name==='groq'?'auto':round===4||calls>=4?'none':round===0?'required':'auto',temperature:0.5,max_completion_tokens:1024};
+    const toolChoice=!orderIntent||round===4||calls>=4?'none':name==='groq'?'auto':round===0?'required':'auto';
+    const payload={model:modelName,messages,temperature:0.5,max_completion_tokens:1024,...(toolChoice==='none'?{}:{tools:[providerTool],tool_choice:toolChoice})};
     if(modelName.includes('gpt-oss'))payload.reasoning_effort='low';
     const token=name==='groq'?groqKey:xkiroKey,url=name==='groq'?'https://api.groq.com/openai/v1/chat/completions':'https://api.xkiro.com/v1/chat/completions';
     const attemptController=new AbortController(),abort=()=>attemptController.abort();
