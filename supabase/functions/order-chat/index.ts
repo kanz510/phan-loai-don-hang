@@ -159,7 +159,7 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
   const latest=normalize(history.at(-1).content);
   // Casual conversation must not force the model to fabricate an order query.
   // For anything that might concern orders, keep the protected query tool mandatory.
-  const orderIntent=/\b(don|hoa hong|doanh thu|thanh toan|khach hang|san pham|giao hang|tien hang|tong tien|thong ke|bao cao|so lieu|don hang|ban duoc|da huy)\b/.test(latest);
+  const orderIntent=/\b(don|hoa hong|doanh thu|thanh toan|khach hang|san pham|giao hang|tien hang|tong tien|thong ke|bao cao|so lieu|don hang|ban duoc|da huy|da ban|ban bao nhieu|bao nhieu|so luong|may (cay|thoi|chai|hop)|bao nhieu (son|sp))\b/.test(latest);
   const messages=[{role:'system',content:system},...history.map(m=>({role:m.role,content:m.content}))];let calls=0;const sources=[],coverage=new Map();const providerOrder=[...(xkiroKey?['xkiro_command','xkiro_sensenova']:[]),...(groqKey?['groq']:[])];let activeProvider=providerOrder[0];
   for(let round=0;round<5;round++){
 
@@ -167,7 +167,7 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
    const runProvider=async(name)=>{
     const modelName=name==='groq'?(env('GROQ_MODEL')||'openai/gpt-oss-120b'):name==='xkiro_command'?'cohere/command-a-plus':'sensenova/sensenova-6.8-flash-lite';
     const providerTool=name==='groq'?{...tool,function:{...tool.function,parameters:{...schema,properties:{...schema.properties,delivery:{type:['array','null'],items:{type:'string',enum:DELIVERY}},payment:{type:['array','null'],items:{type:'string',enum:PAYMENT}},include_details:{type:'boolean'},include_notes:{type:'boolean'}}}}}:tool;
-    const payload={model:modelName,messages,tools:[providerTool],tool_choice:!orderIntent?'none':round===4||calls>=4?'none':round===0?'required':'auto',temperature:0.5,max_completion_tokens:4096};
+    const payload={model:modelName,messages,tools:[providerTool],tool_choice:!orderIntent?'none':name==='groq'?'auto':round===4||calls>=4?'none':round===0?'required':'auto',temperature:0.5,max_completion_tokens:4096};
     if(modelName.includes('gpt-oss'))payload.reasoning_effort='low';
     const token=name==='groq'?groqKey:xkiroKey,url=name==='groq'?'https://api.groq.com/openai/v1/chat/completions':'https://api.xkiro.com/v1/chat/completions';
     const attemptController=new AbortController(),abort=()=>attemptController.abort();
@@ -178,7 +178,13 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
     try{
      const response=await requestXKiro(url,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(payload),signal:attemptController.signal},{fetchImpl,sleep,log,trace,round,provider:name,maxAttempts:1});
      log({event:'order_chat_provider_result',trace,provider:name,round,status:response.status});
-     if(!response.ok)return {response,output:null};
+     if(!response.ok){
+      let detail='';
+      try{detail=(await response.clone().text()).slice(0,1200);}catch{}
+      // Provider error bodies are diagnostic only; never log request headers or API keys.
+      log({event:'order_chat_provider_rejection_detail',trace,provider:name,round,status:response.status,detail});
+      return {response,output:null};
+     }
      let output;
      try{output=await response.json();}
      catch(error){
