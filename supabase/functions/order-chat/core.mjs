@@ -106,13 +106,13 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
    const hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',hourCycle:'h23'}).format(now()));
    const context=hour<5?'đêm khuya':hour<11?'buổi sáng':hour<14?'buổi trưa':hour<18?'buổi chiều':'buổi tối';
    const prompt='Bạn là Em Kem, chó Poodle nâu đáng yêu, nhõng nhẽo, thích nịnh May. Hãy bịa đúng MỘT câu nói xàm xí, bất ngờ, lầy lội, bắt trend mạng xã hội Việt Nam theo cách tự nhiên, phù hợp '+context+'. Ưu tiên khoảng một nửa số lần chế lại ca dao, tục ngữ, thành ngữ Việt Nam thành câu hài mới, hoặc tự sáng tác đạo lý giang hồ xàm xí, triết lý vô tri, vần vè ngược đời; phần còn lại là chơi chữ, tự cà khịa, flex lố, nhõng nhẽo và thả miếng hài bắt trend. Mỗi câu cần có cú bẻ lái bất ngờ, nghe vui và dễ hiểu; không sao chép nguyên văn câu nổi tiếng. Thay đổi chủ đề, cấu trúc, nhịp điệu mạnh giữa các lần, tránh lặp mẫu. Tránh câu hỏi giúp đỡ sáo rỗng, tránh nói về hành động chó như đi dạo, ăn, ngủ, uống; không mô tả trạng thái mascot. Có thể gọi May và xưng Kem nhưng không bắt buộc trong mọi câu. Không bịa tin thời sự hay gắn trend cụ thể chưa xác minh. Tối đa 65 ký tự, tiếng Việt, không xuống dòng, không dấu ngoặc kép, không nhắc số liệu hay khẳng định đã kiểm tra đơn. Có thể dùng một emoji.';
-   const providers=[...(xkiroKey?[{url:'https://api.xkiro.com/v1/chat/completions',token:xkiroKey,model:'cohere/command-a-plus'},{url:'https://api.xkiro.com/v1/chat/completions',token:xkiroKey,model:'sensenova/sensenova-6.8-flash-lite'}]:[]),...(groqKey?[{url:'https://api.groq.com/openai/v1/chat/completions',token:groqKey,model:env('GROQ_MODEL')||'openai/gpt-oss-120b'}]:[])];
+   const providers=[...(xkiroKey?[{url:'https://api.xkiro.com/v1/chat/completions',token:xkiroKey,model:'mistralai/mistral-large-2512'},{url:'https://api.xkiro.com/v1/chat/completions',token:xkiroKey,model:'mistralai/mistral-medium-3.5'}]:[]),...(groqKey?[{url:'https://api.groq.com/openai/v1/chat/completions',token:groqKey,model:env('GROQ_MODEL')||'openai/gpt-oss-120b'}]:[])];
    for(const provider of providers){
     const which=provider.model;
     try{
      // Short greetings do not need reasoning or a large generation budget.
      const body={model:provider.model,messages:[{role:'user',content:prompt}],max_tokens:220};
-     if(which==='cohere/command-a-plus')body.reasoning_effort='none';
+     if(which==='mistralai/mistral-large-2512')body.reasoning_effort='none';
      else body.temperature=0.85;
      const response=await call(provider.url,{method:'POST',headers:{Authorization:'Bearer '+provider.token,'Content-Type':'application/json'},body:JSON.stringify(body)});
      if(!response.ok){
@@ -210,7 +210,7 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
 
 
    const runProvider=async(name)=>{
-    const modelName=name==='groq'?(env('GROQ_MODEL')||'openai/gpt-oss-120b'):name==='xkiro_command'?'cohere/command-a-plus':'sensenova/sensenova-6.8-flash-lite';
+    const modelName=name==='groq'?(env('GROQ_MODEL')||'openai/gpt-oss-120b'):name==='xkiro_command'?'mistralai/mistral-large-2512':'mistralai/mistral-medium-3.5';
     const providerTool=name==='groq'?{...tool,function:{...tool.function,parameters:{...schema,properties:{...schema.properties,delivery:{type:['array','null'],items:{type:'string',enum:DELIVERY}},payment:{type:['array','null'],items:{type:'string',enum:PAYMENT}},include_details:{type:'boolean'},include_notes:{type:'boolean'}}}}}:tool;
     const payload={model:modelName,messages,tools:[providerTool],tool_choice:!orderIntent?'none':name==='groq'?'auto':round===4||calls>=4?'none':round===0?'required':'auto',temperature:0.5,max_completion_tokens:1024};
     if(modelName.includes('gpt-oss'))payload.reasoning_effort='low';
