@@ -144,6 +144,19 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
   const quota=await call(base+'/rest/v1/rpc/consume_order_chat_quota',{method:'POST',headers:{...dbHeaders,'Content-Type':'application/json'},body:'{}'});if(!quota.ok)throw new HttpError(503,'Chưa bật giới hạn sử dụng AI. Chủ cửa hàng cần chạy supabase-ai-chat.sql.');if(await quota.json()!==true)throw new HttpError(429,'Bạn vừa hỏi quá nhanh hoặc đã hết lượt AI hôm nay. Đợi vài giây rồi thử lại; Tra cứu nhanh vẫn dùng được.');
   let dataPromise;const readOrders=()=>dataPromise??=(async()=>{const rows=[];for(let start=0;start<=10000;start+=500){const query=new URLSearchParams({select:'id,customer_name,item,amount_k,commission_amount,payment_method,delivery_status,note,created_at',order:'created_at.desc,id.desc',offset:String(start),limit:'500'});const result=await call(base+'/rest/v1/orders?'+query,{headers:dbHeaders});if(!result.ok)throw new HttpError(503,'Chưa tải được dữ liệu đơn mới. Hãy kiểm tra kết nối và cột hoa hồng.');const batch=await result.json();if(!Array.isArray(batch))throw new HttpError(503,'Dữ liệu đơn không hợp lệ.');rows.push(...batch);if(rows.length>10000)throw new HttpError(422,'Danh sách vượt 10.000 đơn. Cần nâng cấp truy vấn máy chủ trước khi AI có thể thống kê đầy đủ.');if(batch.length<500)return rows;}throw new HttpError(422,'Không thể xác nhận dữ liệu đầy đủ.');})();
 
+  // Exact product-sales count questions use the authorized RLS snapshot directly.
+  // This counts matching order records, not item quantities (which are not tracked here).
+  const productQuestion=normalize(history.at(-1).content).replace(/[?!.،,]/g,' ').replace(/\\s+/g,' ').trim();
+  const productMatch=productQuestion.match(/^(?:kem oi\\s+)?(?:da ban|ban duoc|da ban duoc)\\s+(?:bao nhieu|may)\\s+(.+?)(?:\\s+roi)?(?:\\s+kem)?$/)
+   ||productQuestion.match(/^(?:kem oi\\s+)?(?:bao nhieu|may)\\s+(.+?)\\s+(?:da ban|ban duoc|da ban duoc)(?:\\s+roi)?(?:\\s+kem)?$/);
+  if(productMatch){
+   const product=productMatch[1].trim();
+   if(product.length>=2&&product.length<=100){
+    const filters={from:null,to:null,customer:null,product,delivery:null,payment:null,group_by:'none',include_details:false,include_notes:false};
+    const result=queryOrders(await readOrders(),filters);
+    return send({reply:'May ơi, có '+result.count+' đơn hàng chứa sản phẩm "'+product+'" trong toàn bộ dữ liệu. Đây là số đơn khớp tên sản phẩm, không phải tổng số cây/thỏi vì dữ liệu này chưa có trường số lượng riêng.',sources:[{product,count:result.count}],as_of:now().toISOString()});
+   }
+  }
   const direct=quickOrderFilters(history.at(-1).content,now());
   if(direct){
    const result=queryOrders(await readOrders(),direct.filters),vnd=value=>new Intl.NumberFormat('vi-VN').format(BigInt(value))+'đ';
@@ -165,7 +178,7 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
    const runProvider=async(name)=>{
     const modelName=name==='groq'?(env('GROQ_MODEL')||'openai/gpt-oss-120b'):name==='xkiro_command'?'cohere/command-a-plus':'sensenova/sensenova-6.8-flash-lite';
     const providerTool=name==='groq'?{...tool,function:{...tool.function,parameters:{...schema,properties:{...schema.properties,delivery:{type:['array','null'],items:{type:'string',enum:DELIVERY}},payment:{type:['array','null'],items:{type:'string',enum:PAYMENT}},include_details:{type:'boolean'},include_notes:{type:'boolean'}}}}}:tool;
-    const payload={model:modelName,messages,tools:[providerTool],tool_choice:!orderIntent?'none':name==='groq'?'auto':round===4||calls>=4?'none':round===0?'required':'auto',temperature:0.5,max_completion_tokens:4096};
+    const payload={model:modelName,messages,tools:[providerTool],tool_choice:!orderIntent?'none':name==='groq'?'auto':round===4||calls>=4?'none':round===0?'required':'auto',temperature:0.5,max_completion_tokens:1024};
     if(modelName.includes('gpt-oss'))payload.reasoning_effort='low';
     const token=name==='groq'?groqKey:xkiroKey,url=name==='groq'?'https://api.groq.com/openai/v1/chat/completions':'https://api.xkiro.com/v1/chat/completions';
     const attemptController=new AbortController(),abort=()=>attemptController.abort();
