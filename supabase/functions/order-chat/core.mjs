@@ -94,19 +94,19 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
  if(!['GET','POST'].includes(request.method))return send({error:'Phương thức không được hỗ trợ.'},405);
  const trace=crypto.randomUUID();const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),40000);
  try{
-  const base=env('SUPABASE_URL'),anon=env('SUPABASE_ANON_KEY'),xkiroKey=env('XKIRO_API_KEY'),groqKey=env('GROQ_API_KEY');if(!base||!anon)throw new HttpError(503,'Máy chủ chưa được cấu hình.');
+  const base=env('SUPABASE_URL'),anon=env('SUPABASE_ANON_KEY'),xkiroKey=env('XKIRO_API_KEY'),groqKey=env('GROQ_API_KEY'),renderKey='123';if(!base||!anon)throw new HttpError(503,'Máy chủ chưa được cấu hình.');
   const auth=request.headers.get('authorization')||'';if(!/^Bearer \S+$/i.test(auth)||auth.length>8192)throw new HttpError(401,'Vui lòng đăng nhập lại.');
   const dbHeaders={apikey:anon,Authorization:auth};
   const call=async(url,options={})=>fetchImpl(url,{...options,signal:controller.signal});
   const userResponse=await call(base+'/auth/v1/user',{headers:dbHeaders});if(!userResponse.ok)throw new HttpError(401,'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');const user=await userResponse.json();if(!user.id)throw new HttpError(401,'Phiên đăng nhập không hợp lệ.');
   const memberResponse=await call(base+'/rest/v1/order_members?select=user_id&user_id=eq.'+encodeURIComponent(user.id)+'&limit=1',{headers:dbHeaders});if(!memberResponse.ok)throw new HttpError(503,'Chưa kiểm tra được quyền truy cập.');const members=await memberResponse.json();if(!Array.isArray(members)||members.length!==1)throw new HttpError(403,'Tài khoản chưa được cấp quyền xem đơn.');
   if(request.method==='GET'&&new URL(request.url).searchParams.get('bubble')==='1'){
-   if(!groqKey&&!xkiroKey)return send({error:'AI chưa sẵn sàng'},503);
+   if(!groqKey&&!xkiroKey&&!renderKey)return send({error:'AI chưa sẵn sàng'},503);
    // A short AI-generated greeting; no order data is read or sent to the provider.
    const hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',hourCycle:'h23'}).format(now()));
    const context=hour<5?'đêm khuya':hour<11?'buổi sáng':hour<14?'buổi trưa':hour<18?'buổi chiều':'buổi tối';
    const prompt='Bạn là Em Kem, chó Poodle nâu đáng yêu, nhõng nhẽo, thích nịnh May. Hãy bịa đúng MỘT câu nói xàm xí, bất ngờ, lầy lội, bắt trend mạng xã hội Việt Nam theo cách tự nhiên, phù hợp '+context+'. Ưu tiên khoảng một nửa số lần chế lại ca dao, tục ngữ, thành ngữ Việt Nam thành câu hài mới, hoặc tự sáng tác đạo lý giang hồ xàm xí, triết lý vô tri, vần vè ngược đời; phần còn lại là chơi chữ, tự cà khịa, flex lố, nhõng nhẽo và thả miếng hài bắt trend. Mỗi câu cần có cú bẻ lái bất ngờ, nghe vui và dễ hiểu; không sao chép nguyên văn câu nổi tiếng. Thay đổi chủ đề, cấu trúc, nhịp điệu mạnh giữa các lần, tránh lặp mẫu. Tránh câu hỏi giúp đỡ sáo rỗng, tránh nói về hành động chó như đi dạo, ăn, ngủ, uống; không mô tả trạng thái mascot. Có thể gọi May và xưng Kem nhưng không bắt buộc trong mọi câu. Không bịa tin thời sự hay gắn trend cụ thể chưa xác minh. Tối đa 65 ký tự, tiếng Việt, không xuống dòng, không dấu ngoặc kép, không nhắc số liệu hay khẳng định đã kiểm tra đơn. Có thể dùng một emoji.';
-   const providers=[...(xkiroKey?[{url:'https://api.xkiro.com/v1/chat/completions',token:xkiroKey,model:'mistralai/mistral-large-2512'},{url:'https://api.xkiro.com/v1/chat/completions',token:xkiroKey,model:'mistralai/mistral-medium-3.5'}]:[]),...(groqKey?[{url:'https://api.groq.com/openai/v1/chat/completions',token:groqKey,model:env('GROQ_MODEL')||'openai/gpt-oss-120b'}]:[])];
+   const providers=[{url:'https://telegram-ai-bot-3ju8.onrender.com/v1/chat/completions',token:renderKey,model:'gpt-6.1-sol'},...(xkiroKey?[{url:'https://api.xkiro.com/v1/chat/completions',token:xkiroKey,model:'mistralai/mistral-large-2512'},{url:'https://api.xkiro.com/v1/chat/completions',token:xkiroKey,model:'mistralai/mistral-medium-3.5'}]:[]),...(groqKey?[{url:'https://api.groq.com/openai/v1/chat/completions',token:groqKey,model:env('GROQ_MODEL')||'openai/gpt-oss-120b'}]:[])];
    for(const provider of providers){
     const which=provider.model;
     try{
@@ -135,8 +135,8 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
    log({event:'order_chat_bubble_local_fallback',trace});
    return send({bubble:fallback[Math.floor(Math.random()*fallback.length)],fallback:true});
   }
-  if(request.method==='GET')return send({ready:!!(groqKey||xkiroKey)});
-  if(!groqKey&&!xkiroKey)throw new HttpError(503,'AI chưa được kích hoạt. Chủ cửa hàng cần cấu hình khóa AI trên Supabase; bạn vẫn có thể dùng Tra cứu nhanh.');
+  if(request.method==='GET')return send({ready:!!(groqKey||xkiroKey||renderKey)});
+  if(!groqKey&&!xkiroKey&&!renderKey)throw new HttpError(503,'AI chưa được kích hoạt. Chủ cửa hàng cần cấu hình khóa AI trên Supabase; bạn vẫn có thể dùng Tra cứu nhanh.');
   if(Number(request.headers.get('content-length')||0)>20000)throw new HttpError(400,'Câu hỏi quá dài.');
   // Bound the incoming stream even if Content-Length is omitted or forged.
   const reader=request.body?.getReader();if(!reader)throw new HttpError(400,'Thiếu câu hỏi.');let size=0,chunks=[];while(true){const chunk=await reader.read();if(chunk.done)break;size+=chunk.value.length;if(size>20000){await reader.cancel();throw new HttpError(400,'Câu hỏi quá dài.');}chunks.push(chunk.value);}const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}let body;try{body=JSON.parse(new TextDecoder().decode(bytes));}catch{throw new HttpError(400,'Câu hỏi không hợp lệ.');}
@@ -206,17 +206,17 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
   // Casual conversation must not force the model to fabricate an order query.
   // For anything that might concern orders, keep the protected query tool mandatory.
   const orderIntent=/\b(don|hoa hong|doanh thu|thanh toan|khach hang|san pham|giao hang|tien hang|tong tien|thong ke|bao cao|so lieu|don hang|ban duoc|da huy|da ban|ban bao nhieu|bao nhieu|so luong|may (cay|thoi|chai|hop)|bao nhieu (son|sp))\b/.test(latest);
-  const messages=[{role:'system',content:system},...history.map(m=>({role:m.role,content:m.content}))];let calls=0;const sources=[],coverage=new Map();const providerOrder=[...(xkiroKey?['xkiro_command','xkiro_sensenova']:[]),...(groqKey?['groq']:[])];let activeProvider=providerOrder[0];
+  const messages=[{role:'system',content:system},...history.map(m=>({role:m.role,content:m.content}))];let calls=0;const sources=[],coverage=new Map();const providerOrder=['render_sol',...(xkiroKey?['xkiro_command','xkiro_sensenova']:[]),...(groqKey?['groq']:[])];let activeProvider=providerOrder[0];
   for(let round=0;round<5;round++){
 
 
    const runProvider=async(name)=>{
-    const modelName=name==='groq'?(env('GROQ_MODEL')||'openai/gpt-oss-120b'):name==='xkiro_command'?'mistralai/mistral-large-2512':'mistralai/mistral-medium-3.5';
+    const modelName=name==='render_sol'?'gpt-6.1-sol':name==='groq'?(env('GROQ_MODEL')||'openai/gpt-oss-120b'):name==='xkiro_command'?'mistralai/mistral-large-2512':'mistralai/mistral-medium-3.5';
     const providerTool=name==='groq'?{...tool,function:{...tool.function,parameters:{...schema,properties:{...schema.properties,delivery:{type:['array','null'],items:{type:'string',enum:DELIVERY}},payment:{type:['array','null'],items:{type:'string',enum:PAYMENT}},include_details:{type:'boolean'},include_notes:{type:'boolean'}}}}}:tool;
     const toolChoice=!orderIntent||round===4||calls>=4?'none':name==='groq'?'auto':round===0?'required':'auto';
     const payload={model:modelName,messages,temperature:0.5,max_completion_tokens:1024,...(toolChoice==='none'?{}:{tools:[providerTool],tool_choice:toolChoice})};
     if(modelName.includes('gpt-oss'))payload.reasoning_effort='low';
-    const token=name==='groq'?groqKey:xkiroKey,url=name==='groq'?'https://api.groq.com/openai/v1/chat/completions':'https://api.xkiro.com/v1/chat/completions';
+    const token=name==='render_sol'?renderKey:name==='groq'?groqKey:xkiroKey,url=name==='render_sol'?'https://telegram-ai-bot-3ju8.onrender.com/v1/chat/completions':name==='groq'?'https://api.groq.com/openai/v1/chat/completions':'https://api.xkiro.com/v1/chat/completions';
     const attemptController=new AbortController(),abort=()=>attemptController.abort();
     controller.signal.addEventListener('abort',abort,{once:true});if(controller.signal.aborted)abort();
     // Bound the complete provider operation, including reading its response body.
