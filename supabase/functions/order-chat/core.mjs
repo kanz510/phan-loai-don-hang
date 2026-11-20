@@ -146,9 +146,9 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
 
   // Exact product-sales count questions use the authorized RLS snapshot directly.
   // This counts matching order records, not item quantities (which are not tracked here).
-  const productQuestion=normalize(history.at(-1).content).replace(/[?!.،,]/g,' ').replace(/\\s+/g,' ').trim();
-  const productMatch=productQuestion.match(/^(?:kem oi\\s+)?(?:da ban|ban duoc|da ban duoc)\\s+(?:bao nhieu|may)\\s+(.+?)(?:\\s+roi)?(?:\\s+kem)?$/)
-   ||productQuestion.match(/^(?:kem oi\\s+)?(?:bao nhieu|may)\\s+(.+?)\\s+(?:da ban|ban duoc|da ban duoc)(?:\\s+roi)?(?:\\s+kem)?$/);
+  const productQuestion=normalize(history.at(-1).content).replace(/[?!.،,]/g,' ').replace(/\s+/g,' ').trim();
+  const productMatch=productQuestion.match(/^(?:kem oi\s+)?(?:da ban|ban duoc|da ban duoc)\s+(?:bao nhieu|may)\s+(.+?)(?:\s+roi)?(?:\s+kem)?$/)
+   ||productQuestion.match(/^(?:kem oi\s+)?(?:bao nhieu|may)\s+(.+?)\s+(?:da ban|ban duoc|da ban duoc)(?:\s+roi)?(?:\s+kem)?$/);
   if(productMatch){
    const product=productMatch[1].trim();
    if(product.length>=2&&product.length<=100){
