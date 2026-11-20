@@ -152,6 +152,31 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
   // Recognize conversational quantity questions about Dior without invoking an unreliable model.
   const diorMention=/\b(?:son|thoi|cay)\s+dior\b|\bdior\s+(?:son|lipstick)\b/.test(productQuestion);
   const quantityIntent=/(?:bao nhieu|may|dem|so luong|tong|thong ke|da ban|ban duoc|ban roi|ban bao nhieu|co bao nhieu|tat ca|tinh so)/.test(productQuestion);
+  // Count explicit brand-bag line items locally. Never rely on the model to access order data.
+  if(/\b(?:tui hang|tui)\b/.test(productQuestion)&&quantityIntent){
+   const rows=await readOrders();
+   let bags=0,orders=0,uncertain=0,delivered=0,pending=0;
+   for(const row of rows){
+    if(row.delivery_status==='Đã hủy')continue;
+    const item=normalize(row.item||'').replace(/\s+/g,' ').trim();
+    const matches=[...item.matchAll(/\btui(?:\s+hang)?\b/g)];
+    if(!matches.length)continue;
+    let rowQty=0,ambiguous=false;
+    for(const match of matches){
+     const before=item.slice(Math.max(0,match.index-35),match.index);
+     const explicit=before.match(/(?:^|[,+;]\s*|\s-\s)(\d{1,2})\s*$/);
+     const qty=explicit?Number(explicit[1]):1;
+     if(!Number.isInteger(qty)||qty<1||qty>50){ambiguous=true;continue;}
+     // A multi-unit product with one unspecified bag mention cannot prove one bag per product.
+     if(!explicit&&/\b[2-9]\d?\s+(?:son|thoi|cay)\b/.test(item))ambiguous=true;
+     rowQty+=qty;
+    }
+    if(ambiguous){uncertain++;continue;}
+    bags+=rowQty;orders++;
+    if(row.delivery_status==='Đã giao')delivered+=rowQty;else pending+=rowQty;
+   }
+   return send({reply:'May ơi, Kem đếm được '+bags+' túi được ghi rõ trong '+orders+' đơn chưa hủy ('+delivered+' túi thuộc đơn đã giao, '+pending+' túi thuộc đơn chưa giao).'+(uncertain?' Có '+uncertain+' đơn ghi túi nhưng số lượng chưa rõ, Kem chưa cộng để tránh đếm sai.':'')+' Đây là số túi ghi trong tên sản phẩm, không mặc định mỗi son có một túi.',sources:[{product:'Túi hãng / túi',units:bags,count:orders,uncertain_orders:uncertain}],as_of:now().toISOString(),...(uncertain?{incomplete_details:true}:{})});
+  }
   if(diorMention&&quantityIntent){
    const rows=await readOrders();
    const matched=rows.filter(r=>/\bson\s+dior\b/i.test(normalize(r.item)));
