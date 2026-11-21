@@ -108,7 +108,7 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
    const hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',hourCycle:'h23'}).format(now()));
    const context=hour<5?'đêm khuya':hour<11?'buổi sáng':hour<14?'buổi trưa':hour<18?'buổi chiều':'buổi tối';
    const prompt='Bạn là Em Kem, chó Poodle nâu đáng yêu, nhõng nhẽo, thích nịnh May. Hãy bịa đúng MỘT câu nói xàm xí, bất ngờ, lầy lội, bắt trend mạng xã hội Việt Nam theo cách tự nhiên, phù hợp '+context+'. Ưu tiên khoảng một nửa số lần chế lại ca dao, tục ngữ, thành ngữ Việt Nam thành câu hài mới, hoặc tự sáng tác đạo lý giang hồ xàm xí, triết lý vô tri, vần vè ngược đời; phần còn lại là chơi chữ, tự cà khịa, flex lố, nhõng nhẽo và thả miếng hài bắt trend. Mỗi câu cần có cú bẻ lái bất ngờ, nghe vui và dễ hiểu; không sao chép nguyên văn câu nổi tiếng. Thay đổi chủ đề, cấu trúc, nhịp điệu mạnh giữa các lần, tránh lặp mẫu. Tránh câu hỏi giúp đỡ sáo rỗng, tránh nói về hành động chó như đi dạo, ăn, ngủ, uống; không mô tả trạng thái mascot. Có thể gọi May và xưng Kem nhưng không bắt buộc trong mọi câu. Không bịa tin thời sự hay gắn trend cụ thể chưa xác minh. Tối đa 65 ký tự, tiếng Việt, không xuống dòng, không dấu ngoặc kép, không nhắc số liệu hay khẳng định đã kiểm tra đơn. Có thể dùng một emoji.';
-   const providers=[{url:'https://telegram-ai-bot-3ju8.onrender.com/v1/chat/completions',token:renderKey,model:'gpt-6.1-sol'},...(xkiroKey?[{url:'https://api.xkiro.com/v1/chat/completions',token:xkiroKey,model:'mistralai/mistral-large-2512'},{url:'https://api.xkiro.com/v1/chat/completions',token:xkiroKey,model:'mistralai/mistral-medium-3.5'}]:[]),...(groqKey?[{url:'https://api.groq.com/openai/v1/chat/completions',token:groqKey,model:env('GROQ_MODEL')||'openai/gpt-oss-120b'}]:[])];
+   const providers=[...(xkiroKey?[{url:'https://api.xkiro.com/v1/chat/completions',token:xkiroKey,model:'mistralai/mistral-large-2512'},{url:'https://api.xkiro.com/v1/chat/completions',token:xkiroKey,model:'mistralai/mistral-medium-3.5'}]:[]),...(groqKey?[{url:'https://api.groq.com/openai/v1/chat/completions',token:groqKey,model:env('GROQ_MODEL')||'openai/gpt-oss-120b'}]:[])];
    for(const provider of providers){
     const which=provider.model;
     try{
@@ -270,7 +270,7 @@ export function createHandler({env,fetchImpl=fetch,now=()=>new Date(),sleep=retr
   // Casual conversation must not force the model to fabricate an order query.
   // For anything that might concern orders, keep the protected query tool mandatory.
   const orderIntent=/\b(don|hoa hong|doanh thu|thanh toan|khach hang|san pham|giao hang|tien hang|tong tien|thong ke|bao cao|so lieu|don hang|ban duoc|da huy|da ban|ban bao nhieu|bao nhieu|so luong|may (cay|thoi|chai|hop)|bao nhieu (son|sp))\b/.test(latest);
-  const messages=[{role:'system',content:system},...history.map(m=>({role:m.role,content:m.content}))];let calls=0;const sources=[],coverage=new Map();const providerOrder=['render_sol',...(xkiroKey?['xkiro_command','xkiro_sensenova']:[]),...(groqKey?['groq']:[])];let activeProvider=providerOrder[0];
+  const messages=[{role:'system',content:system},...history.map(m=>({role:m.role,content:m.content}))];let calls=0;const sources=[],coverage=new Map();const providerOrder=[...(xkiroKey?['xkiro_command','xkiro_sensenova']:[]),...(groqKey?['groq']:[])];let activeProvider=providerOrder[0];
   for(let round=0;round<5;round++){
 
 
